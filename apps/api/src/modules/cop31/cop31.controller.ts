@@ -8,6 +8,7 @@ import { Cop31Service } from './cop31.service';
 export class Cop31Controller {
   constructor(@Inject(Cop31Service) private readonly cop31: Cop31Service) {}
 
+  @Get('health') health() { return { status: 'ok' }; }
   @Get('public/cop31/events') listPublic() { return this.cop31.listPublic(); }
   @Get('public/cop31/events/:slug') getPublic(@Param('slug') slug: string) { return this.cop31.getPublic(slug); }
 

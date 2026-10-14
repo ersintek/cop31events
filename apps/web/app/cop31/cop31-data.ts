@@ -11,7 +11,7 @@ export const copy: Record<Cop31Locale, Cop31Copy> = {
   tr: {
     label: 'Eventise keşif rehberi', eyebrow: 'COP31 İLE BAĞLANTILI ETKİNLİKLER', title: 'COP31 yolunda neler oluyor?',
     intro: 'COP31 hakkında düşünmek, öğrenmek, birlikte hazırlanmak ve bağlantı kurmak için düzenlenen etkinlikleri keşfedin.',
-    search: 'Etkinlik, kurum, şehir veya konu ara…', upcoming: 'Yaklaşan', newest: 'Yeni eklenenler', all: 'Tümü', filters: 'Filtreler',
+    search: 'Etkinlik, program, konuşmacı veya şehir ara…', upcoming: 'Yaklaşan', newest: 'Yeni eklenenler', all: 'Tümü', filters: 'Filtreler',
     topic: 'Konu', filterAccess: 'Erişim', date: 'Tarih', region: 'Bölge', format: 'Katılım biçimi', language: 'Etkinlik dili', allTopics: 'Tüm konular', allFormats: 'Tüm biçimler', allLanguages: 'Tüm diller',
     results: 'etkinlik', featured: 'Öne çıkanlar', latest: 'Yeni eklenenler', details: 'Etkinliği incele', register: 'Kayıt / katılım', information: 'Etkinlik bilgisi',
     source: 'Kaynak', share: 'Paylaş', calendar: 'Takvime ekle', back: 'Tüm etkinliklere dön', eventLanguage: 'Etkinlik dili', organizers: 'Düzenleyen', when: 'Tarih ve saat',
@@ -23,7 +23,7 @@ export const copy: Record<Cop31Locale, Cop31Copy> = {
   en: {
     label: 'An Eventise discovery guide', eyebrow: 'COP31-RELATED EVENTS', title: 'What is happening on the road to COP31?',
     intro: 'Discover events that help people think, learn, prepare and connect around COP31.',
-    search: 'Search an event, organization, city or topic…', upcoming: 'Upcoming', newest: 'Newly added', all: 'All', filters: 'Filters',
+    search: 'Search an event, programme, speaker or city…', upcoming: 'Upcoming', newest: 'Newly added', all: 'All', filters: 'Filters',
     topic: 'Topic', filterAccess: 'Access', date: 'Date', region: 'Region', format: 'Attendance', language: 'Event language', allTopics: 'All topics', allFormats: 'All formats', allLanguages: 'All languages',
     results: 'events', featured: 'Featured', latest: 'Newly added', details: 'View event', register: 'Register / attend', information: 'Event information',
     source: 'Source', share: 'Share', calendar: 'Add to calendar', back: 'Back to all events', eventLanguage: 'Event language', organizers: 'Organized by', when: 'Date and time',
@@ -69,10 +69,27 @@ export const localized = (event: Cop31Event, key: 'title' | 'summary' | 'descrip
 export const eventHref = (event: Pick<Cop31Event, 'slug'>, locale: Cop31Locale) => `${locale === 'en' ? '/en' : ''}/cop31/${event.slug}`;
 export const directoryHref = (locale: Cop31Locale) => locale === 'en' ? '/en/cop31' : '/cop31';
 
+export type Cop31Period = 'before' | 'during' | 'after';
+export const eventPeriod = (event: Pick<Cop31Event, 'startsAt' | 'endsAt' | 'timezone'>): Cop31Period => {
+  const localDate = (value: string) => {
+    const parts = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: event.timezone }).formatToParts(new Date(value));
+    const field = (type: string) => parts.find(part => part.type === type)?.value ?? '';
+    return `${field('year')}-${field('month')}-${field('day')}`;
+  };
+  const start = localDate(event.startsAt);
+  const end = event.endsAt ? localDate(event.endsAt) : start;
+  if (start <= '2026-11-20' && end >= '2026-11-09') return 'during';
+  return start < '2026-11-09' ? 'before' : 'after';
+};
+
 export const formatEventDate = (event: Cop31Event, locale: Cop31Locale, withTime = true) => {
   const language = locale === 'tr' ? 'tr-TR' : 'en-GB';
   const dateOptions: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', timeZone: event.timezone };
   const date = new Intl.DateTimeFormat(language, dateOptions).format(new Date(event.startsAt));
+  if (event.timeKnown === false) {
+    const endDate = event.endsAt ? new Intl.DateTimeFormat(language, dateOptions).format(new Date(event.endsAt)) : date;
+    return `${date}${endDate !== date ? ` – ${endDate}` : ''} · ${locale === 'tr' ? 'Saat açıklanmadı' : 'Time not announced'}`;
+  }
   if (!withTime) return date;
   const time = new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit', timeZone: event.timezone, hourCycle: 'h23' }).format(new Date(event.startsAt));
   const end = event.endsAt ? new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit', timeZone: event.timezone, hourCycle: 'h23' }).format(new Date(event.endsAt)) : null;
@@ -82,7 +99,17 @@ export const formatEventDate = (event: Cop31Event, locale: Cop31Locale, withTime
 export const dayNumber = (event: Cop31Event, locale: Cop31Locale) => new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { day: '2-digit', timeZone: event.timezone }).format(new Date(event.startsAt));
 export const monthName = (event: Cop31Event, locale: Cop31Locale) => new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { month: 'short', timeZone: event.timezone }).format(new Date(event.startsAt)).replace('.', '').toLocaleUpperCase(locale === 'tr' ? 'tr-TR' : 'en-GB');
 
-export const isPast = (event: Cop31Event) => new Date(event.endsAt ?? event.startsAt).getTime() < Date.now();
+export const isPast = (event: Cop31Event) => {
+  if (event.timeKnown === false) {
+    const localDate = (value: Date) => {
+      const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: event.timezone }).formatToParts(value);
+      const field = (type: string) => parts.find(part => part.type === type)?.value ?? '';
+      return `${field('year')}-${field('month')}-${field('day')}`;
+    };
+    return localDate(new Date(event.endsAt ?? event.startsAt)) < localDate(new Date());
+  }
+  return new Date(event.endsAt ?? event.startsAt).getTime() < Date.now();
+};
 
 export const getCop31Events = cache(async (): Promise<Cop31Event[]> => {
   if (!API) return useDemoData ? trackerExampleEvents : [];

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Cop31Actions } from './cop31-actions';
-import { copy, directoryHref, eventContent, eventHref, formatEventDate, formatLabel, isPast, localized } from './cop31-data';
+import { copy, dayNumber, directoryHref, eventContent, eventHref, eventPeriod, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
 
 function DetailStatus({ event, locale }: { event: Cop31Event; locale: Cop31Locale }) {
@@ -11,33 +11,98 @@ function DetailStatus({ event, locale }: { event: Cop31Event; locale: Cop31Local
   return null;
 }
 
+function fullEventDate(event: Cop31Event, locale: Cop31Locale) {
+  const language = locale === 'tr' ? 'tr-TR' : 'en-GB';
+  const date = new Intl.DateTimeFormat(language, { day: 'numeric', month: 'long', year: 'numeric', timeZone: event.timezone });
+  const time = new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: event.timezone });
+  const start = new Date(event.startsAt);
+  if (event.timeKnown === false) {
+    const endDate = event.endsAt ? date.format(new Date(event.endsAt)) : date.format(start);
+    return `${date.format(start)}${endDate !== date.format(start) ? ` – ${endDate}` : ''} · ${locale === 'tr' ? 'Saat açıklanmadı' : 'Time not announced'}`;
+  }
+  if (!event.endsAt) return date.format(start) + ' · ' + time.format(start);
+  const end = new Date(event.endsAt);
+  if (date.format(start) === date.format(end)) return date.format(start) + ' · ' + time.format(start) + '–' + time.format(end);
+  return date.format(start) + ' ' + time.format(start) + ' – ' + date.format(end) + ' ' + time.format(end);
+}
+
+function sourceHost(url: string) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); }
+  catch { return url; }
+}
+
 export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop31Locale }) {
   const words = copy[locale];
   const content = eventContent(event, locale);
   const title = localized(event, 'title', locale);
-  const description = localized(event, 'description', locale);
-  const place = event.format === 'ONLINE' ? words.online : [content.venueName, content.venueAddress, content.city, content.country].filter(Boolean).join(', ');
-  const connection = content.cop31Connection;
+  const summary = localized(event, 'summary', locale).trim();
+  const description = localized(event, 'description', locale).trim();
+  const longDescription = description && description !== summary ? description : '';
+  const period = eventPeriod(event);
+  const periodLabel = period === 'before' ? (locale === 'tr' ? 'COP öncesi' : 'Before COP') : period === 'during' ? (locale === 'tr' ? 'COP sırasında' : 'During COP') : (locale === 'tr' ? 'COP sonrası' : 'After COP');
+  const cityAndCountry = [content.city, content.country].filter(Boolean).join(', ');
+  const place = event.format === 'ONLINE' ? words.online : content.venueName || cityAndCountry || words.inPerson;
+  const placeDetail = event.format === 'ONLINE' ? '' : [content.venueAddress, content.venueName ? cityAndCountry : ''].filter(Boolean).join(' · ');
+  const canRegister = event.status !== 'CANCELLED' && event.status !== 'POSTPONED' && !isPast(event);
+  const registrationUrl = canRegister ? content.registrationUrl : null;
+  const informationUrl = content.informationUrl && content.informationUrl !== registrationUrl ? content.informationUrl : null;
+  const hasEventDetails = Boolean(content.eventTypeStandard || content.officialStatus || content.copStatus || content.cop31Connection || content.organizers.length || content.speakers?.length || content.topics.length);
   const otherLanguageHref = eventHref(event, locale === 'tr' ? 'en' : 'tr');
-  return <main className="cop31-page cop31-detail-page">
-    <header className="cop31-header"><Link className="cop31-brand" href="/" aria-label="Eventise ana sayfa"><span>e</span><b>eventise</b></Link><div className="cop31-header-actions"><Link href={otherLanguageHref}>{locale === 'tr' ? 'EN' : 'TR'}</Link><Link href={directoryHref(locale)}>{words.back}</Link></div></header>
+
+  return <main className="cop31-page cop31-radar-page cop31-detail-page">
+    <header className="cop31-header">
+      <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
+      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Link className="cop31-detail-language" href={otherLanguageHref} aria-label={locale === 'tr' ? 'View in English' : 'Türkçe görüntüle'}>{locale === 'tr' ? 'EN' : 'TR'}</Link></div>
+    </header>
+
     <article className="cop31-detail-shell">
       <div className="cop31-detail-topline"><Link href={directoryHref(locale)}>← {words.back}</Link><DetailStatus event={event} locale={locale}/></div>
-      <header className="cop31-detail-hero"><p>{connection}</p><h1>{title}</h1><div className="cop31-detail-tags">{content.topics.map(topic => <span key={topic}>{topic}</span>)}</div></header>
-      <section className="cop31-detail-facts" aria-label="Event facts">
-        <article><span>01</span><div><small>{words.when}</small><strong>{formatEventDate(event, locale)}</strong><p>{event.timezone}</p></div></article>
-        <article><span>02</span><div><small>{words.where}</small><strong>{place || words.inPerson}</strong><p>{formatLabel(event.format, locale)}</p></div></article>
-        <article><span>03</span><div><small>{words.eventLanguage}</small><strong>{content.languages.join(' · ')}</strong><p>{connection}</p></div></article>
+
+      <header className="cop31-detail-hero">
+        <div className="cop31-detail-hero-copy">
+          <p className="cop31-detail-kicker">COP31 / {periodLabel}</p>
+          <h1>{title}</h1>
+          {summary && <p className="cop31-detail-summary">{summary}</p>}
+          {(content.eventTypeStandard || content.copStatus) && <div className="cop31-detail-hero-tags">{content.eventTypeStandard && <span>{content.eventTypeStandard}</span>}{content.copStatus && <span>{content.copStatus}</span>}</div>}
+        </div>
+        <div className="cop31-detail-date-art" aria-hidden="true"><span>COP31RADAR / EVENT</span><strong>{dayNumber(event, locale)}</strong><b>{monthName(event, locale)}</b><small>{new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { year: 'numeric', timeZone: event.timezone }).format(new Date(event.startsAt))}</small><i/></div>
+      </header>
+
+      <section className="cop31-detail-facts" aria-label={locale === 'tr' ? 'Etkinlik özeti' : 'Event overview'}>
+        <div className="cop31-detail-fact"><span>{words.when}</span><strong>{fullEventDate(event, locale)}</strong>{event.timeKnown !== false && <small>{event.timezone}</small>}</div>
+        <div className="cop31-detail-fact"><span>{words.where}</span><strong>{place}</strong>{placeDetail && <small>{placeDetail}</small>}<small>{formatLabel(event.format, locale)}</small></div>
+        {content.languages.length > 0 && <div className="cop31-detail-fact"><span>{words.eventLanguage}</span><strong>{content.languages.join(' · ')}</strong></div>}
       </section>
+
       <div className="cop31-detail-layout">
         <div className="cop31-detail-content">
-          <section><p className="cop31-eyebrow">{words.about}</p><h2>{words.about}</h2>{description ? description.split(/\n{2,}/).map((paragraph, index) => <p key={index}>{paragraph}</p>) : <p>{localized(event, 'summary', locale)}</p>}</section>
-          <section className="cop31-organizer-card"><p className="cop31-eyebrow">{words.organizers}</p><h2>{content.organizers.join(' · ')}</h2>{content.organizerUrl && <a href={content.organizerUrl} target="_blank" rel="noopener noreferrer">{locale === 'tr' ? 'Kurumun web sitesini ziyaret et' : 'Visit the organizer’s website'} ↗</a>}</section>
-          <section className="cop31-source-card"><span aria-hidden="true">↗</span><div><p className="cop31-eyebrow">{words.source}</p><h2>{locale === 'tr' ? 'Etkinlik bilgisi için kaynak bağlantısı' : 'Source for event information'}</h2><a href={content.sourceUrl} target="_blank" rel="noopener noreferrer">{words.source} ↗</a></div></section>
+          {content.umbrellaTitle && <section className="cop31-detail-umbrella" aria-labelledby="cop31-umbrella-title"><p className="cop31-detail-section-label">{locale === 'tr' ? 'Bağlı olduğu şemsiye programı' : 'Umbrella programme'}</p><h2 id="cop31-umbrella-title">{content.umbrellaUrl ? <a href={content.umbrellaUrl} target="_blank" rel="noopener noreferrer">{content.umbrellaTitle} <span aria-hidden="true">↗</span></a> : content.umbrellaTitle}</h2></section>}
+
+          {longDescription && <section className="cop31-detail-section" aria-labelledby="cop31-about-title"><h2 id="cop31-about-title">{words.about}</h2>{longDescription.split(/\n\s*\n/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>}
+
+          {hasEventDetails && <section className="cop31-detail-section cop31-detail-information" aria-labelledby="cop31-information-title"><h2 id="cop31-information-title">{locale === 'tr' ? 'Etkinlik bilgileri' : 'Event details'}</h2><dl className="cop31-detail-data-list">
+            {content.eventTypeStandard && <div><dt>{locale === 'tr' ? 'Etkinlik türü' : 'Event type'}</dt><dd>{content.eventTypeStandard}</dd></div>}
+            {content.officialStatus && <div><dt>{locale === 'tr' ? 'Resmî durum' : 'Official status'}</dt><dd>{content.officialStatus}</dd></div>}
+            {content.copStatus && <div><dt>{locale === 'tr' ? 'COP alanı / konumu' : 'COP area / location'}</dt><dd>{content.copStatus}</dd></div>}
+            {content.cop31Connection && <div><dt>{words.cop31Connection}</dt><dd>{content.cop31Connection}</dd></div>}
+            {content.organizers.length > 0 && <div><dt>{words.organizers}</dt><dd>{content.organizers.join(' · ')}{content.organizerUrl && <a className="cop31-detail-text-link" href={content.organizerUrl} target="_blank" rel="noopener noreferrer">{locale === 'tr' ? 'Düzenleyenin web sitesi' : 'Organizer website'} ↗</a>}</dd></div>}
+            {content.speakers && content.speakers.length > 0 && <div><dt>{locale === 'tr' ? 'Konuşmacılar' : 'Speakers'}</dt><dd><ul className="cop31-detail-people">{content.speakers.map((speaker, index) => <li key={speaker + index}>{speaker}</li>)}</ul></dd></div>}
+            {content.topics.length > 0 && <div><dt>{locale === 'tr' ? 'Konular' : 'Topics'}</dt><dd><ul className="cop31-detail-topics">{content.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></dd></div>}
+          </dl></section>}
+
+          {(content.sourceUrl || event.verifiedAt) && <section className="cop31-detail-section cop31-detail-source" aria-labelledby="cop31-source-title"><h2 id="cop31-source-title">{locale === 'tr' ? 'Kaynak ve kontrol' : 'Source and verification'}</h2>{content.sourceUrl && <a className="cop31-detail-text-link" href={content.sourceUrl} target="_blank" rel="noopener noreferrer">{sourceHost(content.sourceUrl)} ↗</a>}{event.verifiedAt && <p>{words.updated}: {new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(event.verifiedAt))}</p>}</section>}
         </div>
-        <aside className="cop31-attend-card"><p className="cop31-eyebrow">{words.access}</p><h2>{locale === 'tr' ? 'Bu etkinliğe katılın' : 'Attend this event'}</h2><p>{localized(event, 'summary', locale)}</p>{content.registrationUrl ? <a className="cop31-primary-link" href={content.registrationUrl} target="_blank" rel="noopener noreferrer">{words.register} <span>→</span></a> : content.informationUrl ? <a className="cop31-primary-link" href={content.informationUrl} target="_blank" rel="noopener noreferrer">{words.information} <span>→</span></a> : <p className="cop31-no-registration">{words.noRegistration}</p>}<Cop31Actions event={event} locale={locale}/>{event.verifiedAt && <p className="cop31-verified">{words.updated}: {new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(event.verifiedAt))}</p>}</aside>
+
+        <aside className="cop31-attend-card" aria-labelledby="cop31-attend-title"><p className="cop31-detail-section-label">{words.access}</p><h2 id="cop31-attend-title">{locale === 'tr' ? 'Katılım ve bağlantılar' : 'Attendance and links'}</h2>
+          {content.access && <p className="cop31-detail-access">{content.access}</p>}
+          {registrationUrl && <a className="cop31-primary-link" href={registrationUrl} target="_blank" rel="noopener noreferrer">{words.register} <span aria-hidden="true">↗</span></a>}
+          {informationUrl && <a className="cop31-detail-secondary-link" href={informationUrl} target="_blank" rel="noopener noreferrer">{words.information} <span aria-hidden="true">↗</span></a>}
+          {!registrationUrl && !informationUrl && canRegister && <p className="cop31-no-registration">{words.noRegistration}</p>}
+          {!registrationUrl && !informationUrl && content.sourceUrl && <a className="cop31-detail-secondary-link" href={content.sourceUrl} target="_blank" rel="noopener noreferrer">{locale === 'tr' ? 'Etkinlik kaynağı' : 'Event source'} <span aria-hidden="true">↗</span></a>}
+          <Cop31Actions event={event} locale={locale}/>
+        </aside>
       </div>
     </article>
-    <footer className="cop31-footer"><span>© {new Date().getFullYear()} Eventise</span><Link href={directoryHref(locale)}>{locale === 'tr' ? 'COP31 Etkinlikleri' : 'COP31 Events'}</Link></footer>
+    <footer className="cop31-footer"><span>Eventise işbirliği ile COP31Radar.com için geliştirilmiştir.</span></footer>
   </main>;
 }

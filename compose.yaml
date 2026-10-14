@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cop31}
+      POSTGRES_USER: ${POSTGRES_USER:-cop31}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - cop31_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cop31} -d ${POSTGRES_DB:-cop31}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cop31}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cop31}?schema=public
+      WEB_ORIGIN: ${WEB_ORIGIN:?Set WEB_ORIGIN to the public HTTPS site URL}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?Set PUBLIC_APP_URL to the public HTTPS site URL}
+      COP31_EDITOR_KEY: ${COP31_EDITOR_KEY:?Set COP31_EDITOR_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        API_INTERNAL_URL: http://api:3000
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+      API_INTERNAL_URL: http://api:3000
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?Set PUBLIC_APP_URL to the public HTTPS site URL}
+      COP31_EDITOR_PASSWORD: ${COP31_EDITOR_PASSWORD:?Set COP31_EDITOR_PASSWORD}
+      COP31_EDITOR_KEY: ${COP31_EDITOR_KEY:?Set COP31_EDITOR_KEY}
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/cop31').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    expose:
+      - "3001"
+
+volumes:
+  cop31_postgres_data:

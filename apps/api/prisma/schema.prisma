@@ -34,6 +34,7 @@ model Cop31Event {
   descriptionEn String?
   startsAt DateTime
   endsAt DateTime?
+  timeKnown Boolean @default(true)
   timezone String @default("Europe/Istanbul")
   format Cop31EventFormat @default(ONLINE)
   venueName String?

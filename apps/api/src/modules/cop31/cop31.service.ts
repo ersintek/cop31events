@@ -74,6 +74,7 @@ export class Cop31Service {
       titleTr: tr.title, titleEn: en.title, summaryTr: tr.summary, summaryEn: en.summary,
       descriptionTr: tr.description ?? null, descriptionEn: en.description ?? null,
       startsAt: new Date(dto.startsAt), endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
+      timeKnown: dto.timeKnown ?? true,
       timezone: dto.timezone.trim(), format: dto.format,
       venueName: tr.venueName ?? null, venueAddress: tr.venueAddress ?? null, city: tr.city ?? null, country: tr.country ?? null,
       organizers: tr.organizers, organizerUrl: tr.organizerUrl ?? null, languages: tr.languages, topics: tr.topics,
@@ -91,7 +92,8 @@ export class Cop31Service {
       title: value(content.title), summary: value(content.summary), description: text(content.description),
       venueName: text(content.venueName), venueAddress: text(content.venueAddress), city: text(content.city), country: text(content.country),
       organizers: words(content.organizers), organizerUrl: text(content.organizerUrl), languages: words(content.languages), topics: words(content.topics),
-      cop31Connection: value(content.cop31Connection), access: text(content.access), registrationUrl: text(content.registrationUrl), informationUrl: text(content.informationUrl), sourceUrl: value(content.sourceUrl),
+      cop31Connection: value(content.cop31Connection), eventTypeStandard: text(content.eventTypeStandard), officialStatus: text(content.officialStatus), copStatus: text(content.copStatus), parentEventId: text(content.parentEventId), umbrellaTitle: text(content.umbrellaTitle), umbrellaUrl: text(content.umbrellaUrl), speakers: words(content.speakers),
+      access: text(content.access), registrationUrl: text(content.registrationUrl), informationUrl: text(content.informationUrl), sourceUrl: value(content.sourceUrl),
     };
     if (!required) return clean;
     const missing = [

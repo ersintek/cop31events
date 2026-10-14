@@ -17,6 +17,13 @@ export class Cop31EventContentDto {
   @IsOptional() @IsArray() @ArrayMaxSize(6) @IsString({ each: true }) @MaxLength(80, { each: true }) languages?: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(3) @IsString({ each: true }) @MaxLength(80, { each: true }) topics?: string[];
   @IsOptional() @ValidateIf((_object, value) => typeof value !== 'string' || Boolean(value.trim())) @IsString() @MaxLength(100) cop31Connection?: string;
+  @IsOptional() @IsString() @MaxLength(100) eventTypeStandard?: string;
+  @IsOptional() @IsString() @MaxLength(100) officialStatus?: string;
+  @IsOptional() @IsString() @MaxLength(100) copStatus?: string;
+  @IsOptional() @IsString() @MaxLength(180) parentEventId?: string;
+  @IsOptional() @IsString() @MaxLength(180) umbrellaTitle?: string;
+  @IsOptional() @ValidateIf((_object, value) => typeof value !== 'string' || Boolean(value.trim())) @IsUrl({ require_protocol: true }) @MaxLength(2000) umbrellaUrl?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) @MaxLength(180, { each: true }) speakers?: string[];
   @IsOptional() @IsString() @MaxLength(100) access?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2000) registrationUrl?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2000) informationUrl?: string;
@@ -28,6 +35,7 @@ export class Cop31EventDto {
   @IsDefined() @ValidateNested() @Type(() => Cop31EventContentDto) contentEn!: Cop31EventContentDto;
   @IsDateString() startsAt!: string;
   @IsOptional() @IsDateString() endsAt?: string;
+  @IsOptional() @IsBoolean() timeKnown?: boolean;
   @IsString() @MaxLength(80) timezone!: string;
   @IsEnum(Cop31EventFormat) format!: Cop31EventFormat;
   @IsEnum(Cop31EventStatus) status!: Cop31EventStatus;

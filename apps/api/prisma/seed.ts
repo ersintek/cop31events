@@ -9,7 +9,9 @@ async function main() {
     await prisma.cop31Event.upsert({
       where: { slug: record.slug },
       create: { ...data, startsAt: new Date(startsAt), endsAt: endsAt ? new Date(endsAt) : null, verifiedAt: verifiedAt ? new Date(verifiedAt) : null, createdAt: new Date(createdAt), updatedAt: new Date(updatedAt) },
-      update: { ...data, startsAt: new Date(startsAt), endsAt: endsAt ? new Date(endsAt) : null, verifiedAt: verifiedAt ? new Date(verifiedAt) : null },
+      // Seed only creates missing public entries. Later container restarts must
+      // not overwrite edits made in the COP31 editor.
+      update: {},
     });
   }
   console.log(JSON.stringify({ seeded: records.length }));

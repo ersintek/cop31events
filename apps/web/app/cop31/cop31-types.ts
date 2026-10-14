@@ -15,6 +15,13 @@ export type Cop31LocalizedContent = {
   languages: string[];
   topics: string[];
   cop31Connection: string;
+  eventTypeStandard?: string | null;
+  officialStatus?: string | null;
+  copStatus?: string | null;
+  parentEventId?: string | null;
+  umbrellaTitle?: string | null;
+  umbrellaUrl?: string | null;
+  speakers?: string[];
   access?: string | null;
   registrationUrl?: string | null;
   informationUrl?: string | null;
@@ -28,6 +35,7 @@ export type Cop31Event = {
   contentEn: Cop31LocalizedContent;
   startsAt: string;
   endsAt: string | null;
+  timeKnown?: boolean;
   timezone: string;
   format: Cop31Format;
   status: Cop31Status;

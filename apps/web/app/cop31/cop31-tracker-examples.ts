@@ -15,6 +15,13 @@ type TrackerExample = {
   language: string;
   topics: string[];
   connection: string;
+  eventTypeStandard?: string;
+  officialStatus?: string;
+  copStatus?: string;
+  parentEventId?: string;
+  umbrellaTitle?: string;
+  umbrellaUrl?: string;
+  speakers?: string[];
   sourceUrl: string;
   registrationUrl: string;
   featured?: boolean;
@@ -75,7 +82,9 @@ const examples: TrackerExample[] = [
     id: 380, title: 'Building for What’s Next: Corporate Energy Strategies in a Transition Economy', summary: 'Morning programme item in Energy Shift Capital’s independent COP31 investment forum.',
     startsAt: '2026-11-13T09:10:00.000Z', endsAt: '2026-11-13T09:50:00.000Z', timezone: 'Europe/Istanbul', format: 'IN_PERSON', country: 'Türkiye', city: 'Antalya / Aksu', venue: 'IC Santai Hotel; exact room confirmed to approved attendees',
     organizers: ['Energy Shift Capital'], language: 'English', topics: ['Corporate energy strategy'], connection: 'Direct — independent COP31 energy-transition investment forum',
-    sourceUrl: 'https://luma.com/pwdt2vel', registrationUrl: 'https://luma.com/pwdt2vel', featured: true,
+    sourceUrl: 'https://energyshift.capital/cop31', registrationUrl: 'https://energyshift.capital/cop31',
+    eventTypeStandard: 'Panel / Talk', officialStatus: 'Independent', copStatus: 'COP — Off-site', parentEventId: 'COP31-R06-1d4be2b4e2e1d', umbrellaTitle: 'COP31 Global Energy Investment Forum', umbrellaUrl: 'https://energyshift.capital/cop31',
+    speakers: ['Vazil Hudak (moderatör)', 'Alp Keler', 'Daniel Foster Morris'],
   },
   {
     id: 125, title: 'Just transition Pacific Island frontline workers', summary: 'Stakeholder session in the final day of the Fiji Pre-COP31 knowledge-exchange programme.',
@@ -90,11 +99,11 @@ export const trackerExampleEvents: Cop31Event[] = examples.map(example => ({
   slug: `tracker-${example.id}`,
   contentTr: {
     title: example.title, summary: example.summary, description: example.summary, venueName: example.venue, city: example.city, country: example.country,
-    organizers: example.organizers, languages: [example.language], topics: example.topics, cop31Connection: example.connection, access: 'Registration required', sourceUrl: example.sourceUrl, registrationUrl: example.registrationUrl,
+    organizers: example.organizers, languages: [example.language], topics: example.topics, cop31Connection: example.connection, eventTypeStandard: example.eventTypeStandard, officialStatus: example.officialStatus, copStatus: example.copStatus, parentEventId: example.parentEventId, umbrellaTitle: example.umbrellaTitle, umbrellaUrl: example.umbrellaUrl, speakers: example.speakers, access: 'Registration required', sourceUrl: example.sourceUrl, registrationUrl: example.registrationUrl,
   },
   contentEn: {
     title: example.title, summary: example.summary, description: example.summary, venueName: example.venue, city: example.city, country: example.country,
-    organizers: example.organizers, languages: [example.language], topics: example.topics, cop31Connection: example.connection, access: 'Registration required', sourceUrl: example.sourceUrl, registrationUrl: example.registrationUrl,
+    organizers: example.organizers, languages: [example.language], topics: example.topics, cop31Connection: example.connection, eventTypeStandard: example.eventTypeStandard, officialStatus: example.officialStatus, copStatus: example.copStatus, parentEventId: example.parentEventId, umbrellaTitle: example.umbrellaTitle, umbrellaUrl: example.umbrellaUrl, speakers: example.speakers, access: 'Registration required', sourceUrl: example.sourceUrl, registrationUrl: example.registrationUrl,
   },
   startsAt: example.startsAt, endsAt: example.endsAt ?? null, timezone: example.timezone, format: example.format, status: 'PUBLISHED', featured: Boolean(example.featured), verifiedAt: checkedAt, createdAt: checkedAt, updatedAt: checkedAt,
 }));
