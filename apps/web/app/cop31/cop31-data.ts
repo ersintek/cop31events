@@ -67,7 +67,7 @@ export const eventContent = (event: Cop31Event, locale: Cop31Locale): Cop31Local
 export const localized = (event: Cop31Event, key: 'title' | 'summary' | 'description', locale: Cop31Locale) => eventContent(event, locale)[key] ?? '';
 
 export const eventHref = (event: Pick<Cop31Event, 'slug'>, locale: Cop31Locale) => `${locale === 'en' ? '/en' : ''}/cop31/${event.slug}`;
-export const directoryHref = (locale: Cop31Locale) => locale === 'en' ? '/en/cop31' : '/cop31';
+export const directoryHref = (locale: Cop31Locale) => locale === 'en' ? '/en/cop31' : '/';
 
 export type Cop31Period = 'before' | 'during' | 'after';
 export const eventPeriod = (event: Pick<Cop31Event, 'startsAt' | 'endsAt' | 'timezone'>): Cop31Period => {
