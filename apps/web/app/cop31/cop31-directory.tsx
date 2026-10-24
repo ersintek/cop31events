@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { copy, dayNumber, eventContent, eventHref, eventPeriod, formatEventDate, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
+import { Cop31Account } from './cop31-account';
+import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
 
 type Phase = 'all' | 'before' | 'during' | 'after' | 'past';
 const PAGE_SIZE = 24;
@@ -32,7 +34,7 @@ function eventStatus(event: Cop31Event, locale: Cop31Locale) {
   return null;
 }
 
-function EventCard({ event, locale, showUmbrella = true }: { event: Cop31Event; locale: Cop31Locale; showUmbrella?: boolean }) {
+export function EventCard({ event, locale, showUmbrella = true }: { event: Cop31Event; locale: Cop31Locale; showUmbrella?: boolean }) {
   const words = copy[locale];
   const status = eventStatus(event, locale);
   const content = eventContent(event, locale);
@@ -53,13 +55,14 @@ function EventCard({ event, locale, showUmbrella = true }: { event: Cop31Event; 
       {content.organizers.length > 0 && <p className="cop31-organizer-line"><span>{words.organizers}</span>{content.organizers.join(' · ')}</p>}
     </div>
     <div className="cop31-card-action">
+      <Cop31SaveButton slug={event.slug} locale={locale} compact />
       {status && <span className={`cop31-status ${event.status.toLowerCase()}`}>{status}</span>}
       <Link href={eventHref(event, locale)}>{words.details}<span aria-hidden="true">→</span></Link>
     </div>
   </article>;
 }
 
-export function Cop31Directory({ events, locale }: { events: Cop31Event[]; locale: Cop31Locale }) {
+function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; locale: Cop31Locale }) {
   const words = copy[locale];
   const [phase, setPhase] = useState<Phase>('all');
   const [query, setQuery] = useState('');
@@ -136,7 +139,7 @@ export function Cop31Directory({ events, locale }: { events: Cop31Event[]; local
   return <main className="cop31-page cop31-radar-page">
     <header className="cop31-header">
       <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
-      <span className="cop31-radar-domain">events.cop31radar.com</span>
+      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Cop31Account locale={locale}/></div>
     </header>
 
     <section className="cop31-hero cop31-radar-hero" aria-labelledby="cop31-title">
@@ -180,4 +183,8 @@ export function Cop31Directory({ events, locale }: { events: Cop31Event[]; local
     </section>
     <footer className="cop31-footer"><span>Eventise işbirliği ile COP31Radar.com için geliştirilmiştir.</span></footer>
   </main>;
+}
+
+export function Cop31Directory({ events, locale }: { events: Cop31Event[]; locale: Cop31Locale }) {
+  return <Cop31SavedEventsProvider><Cop31DirectoryContent events={events} locale={locale}/></Cop31SavedEventsProvider>;
 }

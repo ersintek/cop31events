@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Cop31Actions } from './cop31-actions';
 import { copy, dayNumber, directoryHref, eventContent, eventHref, eventPeriod, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
+import { Cop31Account } from './cop31-account';
+import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
 
 function DetailStatus({ event, locale }: { event: Cop31Event; locale: Cop31Locale }) {
   const words = copy[locale];
@@ -52,7 +54,7 @@ export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop3
   return <main className="cop31-page cop31-radar-page cop31-detail-page">
     <header className="cop31-header">
       <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
-      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Link className="cop31-detail-language" href={otherLanguageHref} aria-label={locale === 'tr' ? 'View in English' : 'Türkçe görüntüle'}>{locale === 'tr' ? 'EN' : 'TR'}</Link></div>
+      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Cop31Account locale={locale}/><Link className="cop31-detail-language" href={otherLanguageHref} aria-label={locale === 'tr' ? 'View in English' : 'Türkçe görüntüle'}>{locale === 'tr' ? 'EN' : 'TR'}</Link></div>
     </header>
 
     <article className="cop31-detail-shell">
@@ -100,6 +102,7 @@ export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop3
           {!registrationUrl && !informationUrl && canRegister && <p className="cop31-no-registration">{words.noRegistration}</p>}
           {!registrationUrl && !informationUrl && content.sourceUrl && <a className="cop31-detail-secondary-link" href={content.sourceUrl} target="_blank" rel="noopener noreferrer">{locale === 'tr' ? 'Etkinlik kaynağı' : 'Event source'} <span aria-hidden="true">↗</span></a>}
           <Cop31Actions event={event} locale={locale}/>
+          <Cop31SavedEventsProvider><Cop31SaveButton slug={event.slug} locale={locale}/></Cop31SavedEventsProvider>
         </aside>
       </div>
     </article>

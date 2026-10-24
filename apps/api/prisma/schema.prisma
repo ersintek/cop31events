@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 enum Cop31EventStatus {
@@ -22,38 +22,51 @@ enum Cop31EventFormat {
 }
 
 model Cop31Event {
-  id String @id @default(cuid())
-  slug String @unique
-  contentTr Json
-  contentEn Json
-  titleTr String
-  titleEn String
-  summaryTr String
-  summaryEn String
-  descriptionTr String?
-  descriptionEn String?
-  startsAt DateTime
-  endsAt DateTime?
-  timeKnown Boolean @default(true)
-  timezone String @default("Europe/Istanbul")
-  format Cop31EventFormat @default(ONLINE)
-  venueName String?
-  venueAddress String?
-  city String?
-  country String?
-  organizers String[]
-  organizerUrl String?
-  languages String[]
-  topics String[]
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  contentTr       Json
+  contentEn       Json
+  titleTr         String
+  titleEn         String
+  summaryTr       String
+  summaryEn       String
+  descriptionTr   String?
+  descriptionEn   String?
+  startsAt        DateTime
+  endsAt          DateTime?
+  timeKnown       Boolean           @default(true)
+  timezone        String            @default("Europe/Istanbul")
+  format          Cop31EventFormat  @default(ONLINE)
+  venueName       String?
+  venueAddress    String?
+  city            String?
+  country         String?
+  organizers      String[]
+  organizerUrl    String?
+  languages       String[]
+  topics          String[]
   cop31Connection String
   registrationUrl String?
-  informationUrl String?
-  sourceUrl String
-  status Cop31EventStatus @default(DRAFT)
-  featured Boolean @default(false)
-  verifiedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  informationUrl  String?
+  sourceUrl       String
+  status          Cop31EventStatus  @default(DRAFT)
+  featured        Boolean           @default(false)
+  verifiedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  savedBy         Cop31SavedEvent[]
+
   @@index([status, startsAt])
   @@index([featured, startsAt])
+}
+
+model Cop31SavedEvent {
+  id      String     @id @default(cuid())
+  userId  String
+  eventId String
+  savedAt DateTime   @default(now())
+  event   Cop31Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId, savedAt])
 }

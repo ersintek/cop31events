@@ -21,6 +21,11 @@ Set these variables in Dokploy's project environment before the first deployment
 - `POSTGRES_PASSWORD`: a long random hexadecimal password (hex avoids URL encoding problems in `DATABASE_URL`).
 - `COP31_EDITOR_PASSWORD`: a strong password for `/cop31/editor`.
 - `COP31_EDITOR_KEY`: a separate long random secret shared by the web and API services.
+- `DEPO_SSO_ORIGIN`: the COP31Radar origin, normally `https://cop31radar.com`.
+- `DEPO_SSO_CLIENT_SECRET`: a random secret shared with the COP31Radar Cloudflare Worker for one-time SSO code exchange.
+- `COP31_EVENTS_SESSION_SECRET`: a separate random secret of at least 32 characters, set to the same value on the Dokploy web and API services. The web service signs the session and the API verifies it for saved-event requests.
+
+For production SSO, configure the exact callback `https://events.cop31radar.com/api/session/sso/callback` in the COP31Radar Worker allowlist. Store the same `DEPO_SSO_CLIENT_SECRET` value as the Cloudflare Worker secret `EVENTS_SSO_CLIENT_SECRET` and the Dokploy web-service variable. The event-site session secret is separate from the SSO exchange secret and stays only in Dokploy. Deploy both sides together after adding these settings.
 
 The API waits for PostgreSQL, applies Prisma migrations, and seeds only missing starter records before it starts. The seed does not overwrite records later edited in the COP31 editor. PostgreSQL data persists in the named `cop31_postgres_data` volume; configure backups in Dokploy before relying on the deployment.
 
