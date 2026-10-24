@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { COP31_SESSION_COOKIE, cop31AppOrigin, createCop31Session, safeReturnTo, validSsoState } from '@/lib/cop31-session';
 
 export async function GET(request: NextRequest) {
-  const appOrigin = cop31AppOrigin(request.nextUrl.origin);
+  const appOrigin = 'https://events.cop31radar.com';
   if (request.nextUrl.searchParams.get('logout') === '1') {
     const response = NextResponse.redirect(new URL('/cop31', appOrigin));
     for (const name of [COP31_SESSION_COOKIE, 'cop31_sso_state', 'cop31_sso_return']) response.cookies.set(name, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 0 });
