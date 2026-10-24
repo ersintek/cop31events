@@ -15,5 +15,6 @@ data/*.py
 data/*.txt
 data/*
 !data/cop31-events.json
+!data/cop31-import-2026-10-24.json
 *.csv
 **/*.csv
