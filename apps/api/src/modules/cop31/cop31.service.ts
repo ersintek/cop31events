@@ -99,8 +99,6 @@ export class Cop31Service {
     const missing = [
       clean.title.length >= 2 ? null : 'başlık',
       clean.summary.length >= 20 ? null : 'kısa özet',
-      clean.organizers.length ? null : 'düzenleyen kurum',
-      clean.languages.length ? null : 'etkinlik dili',
       clean.cop31Connection ? null : 'COP31 bağlantısı',
       clean.sourceUrl ? null : 'kaynak bağlantısı',
     ].filter((entry): entry is string => Boolean(entry));

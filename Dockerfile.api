@@ -8,6 +8,7 @@ RUN npm ci
 
 COPY apps/api apps/api
 COPY data/cop31-events.json data/cop31-events.json
+COPY data/cop31-import-2026-10-24.json data/cop31-import-2026-10-24.json
 RUN npm run db:generate && npm run build -w @cop31/api
 
 FROM node:24-alpine AS runtime
@@ -19,5 +20,6 @@ COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/data/cop31-events.json ./data/cop31-events.json
+COPY --from=build /app/data/cop31-import-2026-10-24.json ./data/cop31-import-2026-10-24.json
 EXPOSE 3000
 CMD ["sh", "-c", "npm run db:migrate && npm run db:seed && node apps/api/dist/main.js"]

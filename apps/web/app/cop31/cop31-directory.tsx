@@ -50,7 +50,7 @@ function EventCard({ event, locale, showUmbrella = true }: { event: Cop31Event; 
         {content.speakers && content.speakers.length > 0 && <span className="cop31-speaker-line"><b>{locale === 'tr' ? 'Konuşmacılar' : 'Speakers'}:</b> {content.speakers.join(' · ')}</span>}
       </div>}
       <div className="cop31-card-tags"><span className="cop31-connection-tag">{content.cop31Connection}</span>{content.topics.map(topic => <span key={topic}>{topic}</span>)}</div>
-      <p className="cop31-organizer-line"><span>{words.organizers}</span>{content.organizers.join(' · ')}</p>
+      {content.organizers.length > 0 && <p className="cop31-organizer-line"><span>{words.organizers}</span>{content.organizers.join(' · ')}</p>}
     </div>
     <div className="cop31-card-action">
       {status && <span className={`cop31-status ${event.status.toLowerCase()}`}>{status}</span>}
