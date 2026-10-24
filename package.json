@@ -2,16 +2,23 @@
   "name": "cop31-events",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "build": "npm run build -w @cop31/api && npm run build -w @cop31/web",
-    "db:generate": "node scripts/prisma.mjs generate",
-    "db:migrate": "node scripts/prisma.mjs migrate deploy",
-    "db:seed": "node scripts/prisma.mjs db seed",
+    "db:generate": "npm run db:generate -w @cop31/api",
+    "db:migrate": "npm run db:migrate -w @cop31/api",
+    "db:seed": "npm run db:seed -w @cop31/api",
     "db:local": "node scripts/start-local-db.mjs",
     "dev:api": "npm run start:dev -w @cop31/api",
     "dev:web": "npm run dev -w @cop31/web"
   },
-  "engines": { "node": ">=22" },
-  "devDependencies": { "dotenv": "^16.6.1" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "dotenv": "^16.6.1",
+    "prisma": "^6.12.0"
+  }
 }
