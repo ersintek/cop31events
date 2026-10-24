@@ -46,3 +46,20 @@ export function safeReturnTo(value: string | null | undefined) {
   try { const parsed = new URL(value, 'https://events.cop31radar.com'); return parsed.origin === 'https://events.cop31radar.com' || parsed.origin === 'http://localhost:3001' ? `${parsed.pathname}${parsed.search}${parsed.hash}` : '/cop31'; }
   catch { return '/cop31'; }
 }
+
+export function cop31AppOrigin(requestOrigin: string) {
+  const productionOrigin = 'https://events.cop31radar.com';
+  const configured = process.env.PUBLIC_APP_URL;
+  if (process.env.NODE_ENV === 'production') {
+    if (configured) {
+      try {
+        const parsed = new URL(configured);
+        if (parsed.protocol === 'https:' && parsed.hostname === 'events.cop31radar.com') return parsed.origin;
+      } catch { /* Use the known public production origin below. */ }
+    }
+    return productionOrigin;
+  }
+  try { return new URL(configured || requestOrigin).origin; }
+  catch { return requestOrigin; }
+}
+
