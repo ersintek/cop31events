@@ -2,7 +2,6 @@ import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, UseG
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { IsString, MaxLength, MinLength } from 'class-validator';
-import { Request } from 'express';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../shared/persistence/prisma.service';
 import { Cop31SessionGuard, Cop31SessionUser } from './cop31-session.guard';
@@ -11,7 +10,7 @@ class SaveCop31EventDto {
   @IsString() @MinLength(1) @MaxLength(180) slug!: string;
 }
 
-type AuthenticatedRequest = Request & { user: Cop31SessionUser };
+type AuthenticatedRequest = { user: Cop31SessionUser };
 
 @ApiTags('cop31 saved events')
 @ApiBearerAuth()
