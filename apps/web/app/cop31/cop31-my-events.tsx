@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Cop31Account } from './cop31-account';
+import { Cop31SiteHeader } from './cop31-site-header';
+import { Cop31ConnectBand } from './cop31-connect-band';
 import { EventCard } from './cop31-directory';
 import { Cop31SavedEventsProvider, useCop31SavedEvents } from './cop31-saved-events';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
@@ -13,10 +14,7 @@ function MyEventsContent({ events, locale }: { events: Cop31Event[]; locale: Cop
   const ownEvents = events.filter(event => saved.has(event.slug)).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
 
   return <main className="cop31-page cop31-radar-page cop31-my-events-page">
-    <header className="cop31-header">
-      <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
-      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Cop31Account locale={locale}/></div>
-    </header>
+    <Cop31SiteHeader locale={locale}/>
     <section className="cop31-my-events-hero">
       <p className="cop31-eyebrow">COP31 / {locale === 'tr' ? 'KİŞİSEL LİSTEN' : 'YOUR SAVED EVENTS'}</p>
       <h1>{locale === 'tr' ? 'Etkinliklerim' : 'My events'}</h1>
@@ -28,6 +26,7 @@ function MyEventsContent({ events, locale }: { events: Cop31Event[]; locale: Cop
       {signedIn === true && ownEvents.length === 0 && <div className="cop31-my-events-empty"><h2>{locale === 'tr' ? 'Henüz etkinlik kaydetmedin' : 'You have not saved any events yet'}</h2><p>{locale === 'tr' ? 'Etkinlik listesindeki Kaydet düğmesiyle ilgini çekenleri buraya ekle.' : 'Use the Save button in the event directory to add events here.'}</p><Link className="cop31-my-events-primary" href={directory}>{locale === 'tr' ? 'Etkinlikleri keşfet' : 'Explore events'}</Link></div>}
       {signedIn === true && ownEvents.length > 0 && <><p className="cop31-my-events-count">{ownEvents.length} {locale === 'tr' ? 'kayıtlı etkinlik' : 'saved events'}</p><div className="cop31-event-list">{ownEvents.map(event => <EventCard key={event.id} event={event} locale={locale}/>)}</div></>}
     </section>
+    <Cop31ConnectBand locale={locale}/>
     <footer className="cop31-footer"><Link href={directory}>← {locale === 'tr' ? 'Tüm etkinliklere dön' : 'Back to all events'}</Link><span>Eventise işbirliği ile COP31Radar.com için geliştirilmiştir.</span></footer>
   </main>;
 }

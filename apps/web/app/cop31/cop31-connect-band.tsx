@@ -1,0 +1,5 @@
+import type { Cop31Locale } from './cop31-types';
+export function Cop31ConnectBand({ locale }: { locale: Cop31Locale }) {
+  const tr = locale === 'tr';
+  return <aside className="cop31-connect-band" aria-label={tr ? 'Bağlantıda kalın' : 'Stay connected'}><div><strong>{tr ? 'COP31 gündemini takip edin' : 'Follow the COP31 agenda'}</strong><p>{tr ? 'E-posta bülteni yakında. Şimdilik WhatsApp kanalımızdan güncellemeleri takip edebilirsiniz.' : 'The email newsletter is coming soon. For now, follow updates on our WhatsApp channel.'}</p></div><div className="cop31-connect-actions"><div className="cop31-connect-email"><input type="email" disabled aria-label={tr ? 'E-posta adresiniz' : 'Your email address'} placeholder={tr ? 'E-posta adresiniz' : 'Your email address'}/><span>{tr ? 'Yakında' : 'Coming soon'}</span></div><a href="https://whatsapp.com/channel/0029VbCtDVKLI8YOT4nm5r1t" target="_blank" rel="noopener noreferrer">{tr ? 'WhatsApp kanalına katıl' : 'Join our WhatsApp channel'} ↗</a></div></aside>;
+}

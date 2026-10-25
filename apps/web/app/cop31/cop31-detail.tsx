@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { Cop31Actions } from './cop31-actions';
-import { copy, dayNumber, directoryHref, eventContent, eventHref, eventPeriod, formatLabel, isPast, localized, monthName } from './cop31-data';
+import { copy, dayNumber, directoryHref, eventContent, eventPeriod, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
-import { Cop31Account } from './cop31-account';
+import { Cop31SiteHeader } from './cop31-site-header';
+import { Cop31ConnectBand } from './cop31-connect-band';
 import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
 
 function DetailStatus({ event, locale }: { event: Cop31Event; locale: Cop31Locale }) {
@@ -49,13 +50,9 @@ export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop3
   const registrationUrl = canRegister ? content.registrationUrl : null;
   const informationUrl = content.informationUrl && content.informationUrl !== registrationUrl ? content.informationUrl : null;
   const hasEventDetails = Boolean(content.eventTypeStandard || content.officialStatus || content.copStatus || content.cop31Connection || content.organizers.length || content.speakers?.length || content.topics.length);
-  const otherLanguageHref = eventHref(event, locale === 'tr' ? 'en' : 'tr');
 
   return <main className="cop31-page cop31-radar-page cop31-detail-page">
-    <header className="cop31-header">
-      <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
-      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Cop31Account locale={locale}/><Link className="cop31-detail-language" href={otherLanguageHref} aria-label={locale === 'tr' ? 'View in English' : 'Türkçe görüntüle'}>{locale === 'tr' ? 'EN' : 'TR'}</Link></div>
-    </header>
+    <Cop31SiteHeader locale={locale}/>
 
     <article className="cop31-detail-shell">
       <div className="cop31-detail-topline"><Link href={directoryHref(locale)}>← {words.back}</Link><DetailStatus event={event} locale={locale}/></div>
@@ -106,6 +103,7 @@ export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop3
         </aside>
       </div>
     </article>
+    <Cop31ConnectBand locale={locale}/>
     <footer className="cop31-footer"><span>Eventise işbirliği ile COP31Radar.com için geliştirilmiştir.</span></footer>
   </main>;
 }
