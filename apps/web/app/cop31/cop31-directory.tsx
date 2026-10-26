@@ -35,14 +35,15 @@ function eventStatus(event: Cop31Event, locale: Cop31Locale) {
   return null;
 }
 
-export function EventCard({ event, locale, showUmbrella = true }: { event: Cop31Event; locale: Cop31Locale; showUmbrella?: boolean }) {
+export function EventCard({ event, locale, showUmbrella = true, featured = false }: { event: Cop31Event; locale: Cop31Locale; showUmbrella?: boolean; featured?: boolean }) {
   const words = copy[locale];
   const status = eventStatus(event, locale);
   const content = eventContent(event, locale);
   const place = event.format === 'ONLINE' ? words.online : [content.city, content.country].filter(Boolean).join(', ') || content.venueName || words.inPerson;
-  return <article className={`cop31-event-card${event.status === 'CANCELLED' ? ' is-cancelled' : ''}`}>
+  return <article className={`cop31-event-card${event.status === 'CANCELLED' ? ' is-cancelled' : ''}${featured ? ' is-featured' : ''}`}>
     <time className="cop31-date-badge" dateTime={event.startsAt}><strong>{dayNumber(event, locale)}</strong><span>{monthName(event, locale)}</span></time>
     <div className="cop31-card-main">
+      {featured && <span className="cop31-featured-badge">{locale === 'tr' ? 'ÖNE ÇIKAN · FEATURED' : 'FEATURED'}</span>}
       <div className="cop31-card-meta"><span>{formatEventDate(event, locale)}</span><span aria-hidden="true">·</span><span>{formatLabel(event.format, locale)}</span><span aria-hidden="true">·</span><span>{place}</span></div>
       <h2><Link href={eventHref(event, locale)}>{localized(event, 'title', locale)}</Link></h2>
       <p>{localized(event, 'summary', locale)}</p>
@@ -100,7 +101,7 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   }, [copArea, date, eventType, events, format, locale, phase, query, umbrella]);
   const filterKey = JSON.stringify([phase, query, umbrella, eventType, copArea, date, format]);
   const visibleCount = pagination.key === filterKey ? pagination.count : PAGE_SIZE;
-  const featured = shown.filter(event => event.featured && !isPast(event)).slice(0, 6);
+  const featured = shown.filter(event => event.featured && !isPast(event));
   const featuredIds = new Set(featured.map(event => event.id));
   const regular = shown.filter(event => !featuredIds.has(event.id));
   const visibleRegular = regular.slice(0, visibleCount);
@@ -168,11 +169,11 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
         <label>{locale === 'tr' ? 'Tarih (GG-AA-YY)' : 'Date (DD-MM-YY)'}<input value={dateEntry} inputMode="numeric" maxLength={8} placeholder={locale === 'tr' ? 'GG-AA-YY' : 'DD-MM-YY'} onChange={event => updateDate(event.target.value)} />{date && <small className="cop31-filter-date-label">{readableDate(date, locale)}</small>}</label>
         {formats.length > 0 && <label>{words.format}<select value={format} onChange={event => setFormat(event.target.value)}><option value="">{words.allFormats}</option>{formats.map(value => <option key={value} value={value}>{formatLabel(value, locale)}</option>)}</select></label>}
         <div className="cop31-filter-note"><span aria-hidden="true">i</span><p>{locale === 'tr' ? 'Etkinlik bilgileri açık kaynaklardan ve doğrudan paylaşılan duyurulardan derlenir.' : 'Event information is curated from public sources and directly shared announcements.'}</p></div>
+        {featured.length > 0 && <section className="cop31-featured-sidebar" aria-label={locale === 'tr' ? 'Öne çıkan etkinlikler' : 'Featured events'}><h2>{locale === 'tr' ? 'Öne çıkan etkinlikler' : 'Featured events'}</h2>{featured.map(event => { const content = eventContent(event, locale); return <article className="cop31-featured-mini-card" key={event.id}><Link className="cop31-featured-mini-title" href={eventHref(event, locale)}>{localized(event, 'title', locale)}</Link><time dateTime={event.startsAt}>{formatEventDate(event, locale, false)}</time>{content.organizers[0] && <span className="cop31-featured-mini-organizer">{content.organizers[0]}</span>}<Link className="cop31-featured-mini-link" href={eventHref(event, locale)}>{locale === 'tr' ? 'Etkinliği incele' : 'View event'} <span aria-hidden="true">→</span></Link></article>; })}</section>}
       </aside>
       <div className="cop31-results">
         <div className="cop31-results-heading"><p>{shown.length} {words.results}{shown.length > displayedCount ? ` · ${displayedCount} ${locale === 'tr' ? 'gösteriliyor' : 'shown'}` : ''}</p></div>
-        {featured.length > 0 && <section className="cop31-featured"><div className="cop31-section-label"><span>{words.featured}</span><i /></div>{featured.map(event => <EventCard event={event} locale={locale} key={event.id}/>)}</section>}
-        {shown.length > 0 ? <div className="cop31-event-list">{eventGroups.map(group => group.title ? <section className="cop31-umbrella-group" key={group.key}>
+        {shown.length > 0 ? <div className="cop31-event-list">{featured.map(event => <EventCard event={event} locale={locale} featured key={`featured-${event.id}`}/>)}{eventGroups.map(group => group.title ? <section className="cop31-umbrella-group" key={group.key}>
           <header><div><p>{locale === 'tr' ? 'ŞEMSİYE PROGRAM' : 'UMBRELLA PROGRAMME'} · {umbrellaTotals.get(group.title) ?? group.events.length} {locale === 'tr' ? 'alt etkinlik' : 'sessions'}</p><h2>{group.url ? <a href={group.url} target="_blank" rel="noopener noreferrer">{group.title} ↗</a> : group.title}</h2></div></header>
           <div className="cop31-umbrella-sessions">{group.events.map(event => <EventCard event={event} locale={locale} showUmbrella={false} key={event.id}/>)}</div>
         </section> : <EventCard event={group.events[0]} locale={locale} key={group.key}/>)}</div> : <div className="cop31-empty"><span aria-hidden="true">⌁</span><h2>{words.emptyTitle}</h2><p>{words.emptyBody}</p><button type="button" onClick={showAll}>{locale === 'tr' ? 'Tüm etkinlikleri göster' : 'Show all events'} →</button></div>}
@@ -187,3 +188,4 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
 export function Cop31Directory({ events, locale }: { events: Cop31Event[]; locale: Cop31Locale }) {
   return <Cop31SavedEventsProvider><Cop31DirectoryContent events={events} locale={locale}/></Cop31SavedEventsProvider>;
 }
+

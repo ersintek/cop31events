@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { directoryHref } from './cop31-data';
 import type { Cop31Event, Cop31Format, Cop31Locale, Cop31Status } from './cop31-types';
 import { isoToZonedDateTimeInput, zonedDateTimeToIso } from '@/lib/zoned-datetime';
@@ -117,6 +117,9 @@ const statusLabel = (status: Cop31Status) => status === 'PUBLISHED' ? 'Yayında'
 
 export function Cop31Editor() {
   const [events, setEvents] = useState<Cop31Event[]>([]);
+  const [eventSearch, setEventSearch] = useState('');
+  const [eventStatusFilter, setEventStatusFilter] = useState<'ALL' | Cop31Status>('ALL');
+  const [eventFeaturedFilter, setEventFeaturedFilter] = useState<'ALL' | 'FEATURED' | 'REGULAR'>('ALL');
   const [form, setForm] = useState<FormState>(blank);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState('');
@@ -127,6 +130,18 @@ export function Cop31Editor() {
   const [entryMode, setEntryMode] = useState<EntryMode>('form');
   const notice = (value: string, isError = false) => { setMessage(value); setMessageIsError(isError); };
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm(current => ({ ...current, [key]: value }));
+
+  const filteredEvents = useMemo(() => {
+    const needle = eventSearch.trim().toLocaleLowerCase('tr-TR');
+    return events.filter(event => {
+      if (eventStatusFilter !== 'ALL' && event.status !== eventStatusFilter) return false;
+      if (eventFeaturedFilter === 'FEATURED' && !event.featured) return false;
+      if (eventFeaturedFilter === 'REGULAR' && event.featured) return false;
+      if (!needle) return true;
+      const searchable = [event.slug, event.contentTr.title, event.contentTr.summary, event.contentEn.title, event.contentEn.summary, event.contentTr.organizers.join(' '), event.contentEn.organizers.join(' '), event.contentTr.city, event.contentEn.city, event.contentTr.country, event.contentEn.country].filter(Boolean).join(' ').toLocaleLowerCase('tr-TR');
+      return searchable.includes(needle);
+    });
+  }, [eventFeaturedFilter, eventSearch, eventStatusFilter, events]);
 
   const load = async () => {
     setLoading(true);
@@ -214,7 +229,7 @@ export function Cop31Editor() {
   return <main className="cop31-editor-page">
     <header className="cop31-editor-header"><Link className="cop31-brand" href="/"><span>e</span><b>eventise</b></Link><div><Link href={directoryHref('tr')} target="_blank">Genel sayfayı aç ↗</Link><button type="button" onClick={logout}>Çıkış</button></div></header>
     <div className="cop31-editor-layout">
-      <aside className="cop31-editor-list"><div><p className="cop31-eyebrow">COP31 ETKİNLİKLERİ</p><h1>İçerik alanı</h1><button className="cop31-editor-new" type="button" onClick={() => { setForm(blank()); setScreen('tr'); setEntryMode('form'); notice(''); }}>+ Yeni etkinlik</button></div><p className="cop31-editor-count">{events.length} kayıt</p><div>{events.map(event => <button type="button" className={form.id === event.id ? 'active' : ''} onClick={() => { setForm(fromEvent(event)); setScreen('tr'); setEntryMode('form'); notice(''); }} key={event.id}><span>{new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short', timeZone: event.timezone }).format(new Date(event.startsAt))}</span><strong>{event.contentTr.title || event.contentEn.title}</strong><small>{statusLabel(event.status)}</small></button>)}</div></aside>
+      <aside className="cop31-editor-list"><div><p className="cop31-eyebrow">COP31 ETKİNLİKLERİ</p><h1>İçerik alanı</h1><button className="cop31-editor-new" type="button" onClick={() => { setForm(blank()); setScreen('tr'); setEntryMode('form'); notice(''); }}>+ Yeni etkinlik</button></div><div className="cop31-editor-filters"><label>Etkinlik ara<input type="search" value={eventSearch} onChange={event => setEventSearch(event.target.value)} placeholder="Başlık, kurum, şehir veya kısa ad" /></label><label>Yayın durumu<select value={eventStatusFilter} onChange={event => setEventStatusFilter(event.target.value as 'ALL' | Cop31Status)}><option value="ALL">Tüm durumlar</option><option value="PUBLISHED">Yayında</option><option value="DRAFT">Taslak</option><option value="POSTPONED">Ertelendi</option><option value="CANCELLED">İptal edildi</option><option value="ARCHIVED">Arşiv</option></select></label><label>Öne çıkan<select value={eventFeaturedFilter} onChange={event => setEventFeaturedFilter(event.target.value as 'ALL' | 'FEATURED' | 'REGULAR')}><option value="ALL">Tümü</option><option value="FEATURED">Öne çıkanlar</option><option value="REGULAR">Normal liste</option></select></label></div><p className="cop31-editor-count">{filteredEvents.length} / {events.length} kayıt</p><div className="cop31-editor-event-list">{filteredEvents.map(event => <button type="button" className={`${form.id === event.id ? 'active ' : ''}${event.featured ? 'featured' : ''}`} onClick={() => { setForm(fromEvent(event)); setScreen('tr'); setEntryMode('form'); notice(''); }} key={event.id}><span>{new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short', timeZone: event.timezone }).format(new Date(event.startsAt))}</span><strong>{event.contentTr.title || event.contentEn.title}</strong><small>{statusLabel(event.status)}{event.featured ? ' · Öne çıkan' : ''}</small></button>)}{filteredEvents.length === 0 && <p className="cop31-editor-no-results">Aramayla eşleşen etkinlik yok.</p>}</div></aside>
       <section className="cop31-editor-form-wrap">
         <header><div><p className="cop31-eyebrow">{form.id ? 'ETKİNLİĞİ DÜZENLE' : 'YENİ ETKİNLİK'}</p><h2>{form.id ? 'Etkinlik bilgileri' : 'Yeni COP31 etkinliği'}</h2></div>{message && <p className={'cop31-editor-message' + (messageIsError ? ' error' : '')} role="status">{message}</p>}</header>
         <form className="cop31-editor-form" onSubmit={save}>
@@ -231,3 +246,4 @@ export function Cop31Editor() {
     </div>
   </main>;
 }
+
