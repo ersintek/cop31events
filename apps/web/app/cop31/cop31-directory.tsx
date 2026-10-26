@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { copy, dayNumber, eventContent, eventHref, eventPeriod, formatEventDate, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
-import { Cop31SiteHeader } from './cop31-site-header';
-import { Cop31ConnectBand } from './cop31-connect-band';
+import { Cop31Account } from './cop31-account';
 import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
 
 type Phase = 'all' | 'before' | 'during' | 'after' | 'past';
@@ -139,7 +138,10 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   const updateDate = (value: string) => { const formatted = dateInput(value); setDateEntry(formatted); setDate(dateFilterValue(formatted)); };
 
   return <main className="cop31-page cop31-radar-page">
-    <Cop31SiteHeader locale={locale}/>
+    <header className="cop31-header">
+      <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
+      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Cop31Account locale={locale}/></div>
+    </header>
 
     <section className="cop31-hero cop31-radar-hero" aria-labelledby="cop31-title">
       <div className="cop31-hero-inner">
@@ -180,7 +182,6 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
         {shown.length > displayedCount && <div className="cop31-load-more"><button type="button" onClick={() => setPagination({ key: filterKey, count: visibleCount + PAGE_SIZE })}>{locale === 'tr' ? 'Daha fazla göster' : 'Show more'} <span aria-hidden="true">↓</span></button></div>}
       </div>
     </section>
-    <Cop31ConnectBand locale={locale}/>
     <footer className="cop31-footer"><span>Eventise işbirliği ile COP31Radar.com için geliştirilmiştir.</span></footer>
   </main>;
 }
