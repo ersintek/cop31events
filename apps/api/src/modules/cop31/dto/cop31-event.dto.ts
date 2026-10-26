@@ -48,3 +48,17 @@ export class CreateCop31EventDto extends Cop31EventDto {
   @IsString() @Length(2, 100) @Matches(/^[a-z0-9-]+$/) slug!: string;
 }
 
+// Updates are intentionally sparse: omitted values must never erase saved data.
+export class UpdateCop31EventDto {
+  @IsOptional() @ValidateNested() @Type(() => Cop31EventContentDto) contentTr?: Cop31EventContentDto;
+  @IsOptional() @ValidateNested() @Type(() => Cop31EventContentDto) contentEn?: Cop31EventContentDto;
+  @IsOptional() @IsDateString() startsAt?: string;
+  @IsOptional() @IsDateString() endsAt?: string;
+  @IsOptional() @IsBoolean() timeKnown?: boolean;
+  @IsOptional() @IsString() @MaxLength(80) timezone?: string;
+  @IsOptional() @IsEnum(Cop31EventFormat) format?: Cop31EventFormat;
+  @IsOptional() @IsEnum(Cop31EventStatus) status?: Cop31EventStatus;
+  @IsOptional() @IsBoolean() featured?: boolean;
+  @IsOptional() @IsIn(['TOP', 'SIDEBAR', 'BOTH']) featuredPlacement?: 'TOP' | 'SIDEBAR' | 'BOTH';
+  @IsOptional() @IsDateString() verifiedAt?: string;
+}

@@ -14,7 +14,7 @@ type ContentDraft = {
   title: string; summary: string; description: string; venueName: string; venueAddress: string; city: string; country: string;
   organizers: string[]; organizerUrl: string; languages: string[]; topics: string[]; cop31Connection: string;
   eventTypeStandard: string; officialStatus: string; copStatus: string; parentEventId: string; umbrellaTitle: string; umbrellaUrl: string; speakers: string[];
-  registrationUrl: string; informationUrl: string; sourceUrl: string;
+  registrationUrl: string; informationUrl: string; sourceUrl: string; access: string;
 };
 type FormState = {
   id?: string; slug: string; timezone: string; format: Cop31Format; status: Cop31Status; featured: boolean; featuredPlacement: Cop31FeaturedPlacement; timeKnown: boolean;
@@ -32,7 +32,7 @@ const dateInput = (value: string) => {
 
 const emptyContentObject = (locale: Cop31Locale): ContentDraft => ({
   title: '', summary: '', description: '', venueName: '', venueAddress: '', city: '', country: '', organizers: [], organizerUrl: '',
-  languages: locale === 'tr' ? ['Türkçe'] : ['English'], topics: [], cop31Connection: '', eventTypeStandard: '', officialStatus: '', copStatus: '', parentEventId: '', umbrellaTitle: '', umbrellaUrl: '', speakers: [], registrationUrl: '', informationUrl: '', sourceUrl: '',
+  languages: locale === 'tr' ? ['Türkçe'] : ['English'], topics: [], cop31Connection: '', eventTypeStandard: '', officialStatus: '', copStatus: '', parentEventId: '', umbrellaTitle: '', umbrellaUrl: '', speakers: [], registrationUrl: '', informationUrl: '', sourceUrl: '', access: '',
 });
 const emptyContent = (locale: Cop31Locale) => JSON.stringify(emptyContentObject(locale), null, 2);
 
@@ -44,7 +44,7 @@ function contentDraft(value: string, locale: Cop31Locale): ContentDraft {
     const item = parsed as Record<string, unknown>;
     const text = (key: keyof ContentDraft) => typeof item[key] === 'string' ? item[key] as string : fallback[key] as string;
     const list = (key: 'organizers' | 'languages' | 'topics' | 'speakers') => Array.isArray(item[key]) ? item[key].filter((entry): entry is string => typeof entry === 'string') : fallback[key];
-    return { title: text('title'), summary: text('summary'), description: text('description'), venueName: text('venueName'), venueAddress: text('venueAddress'), city: text('city'), country: text('country'), organizers: list('organizers'), organizerUrl: text('organizerUrl'), languages: list('languages'), topics: list('topics'), cop31Connection: text('cop31Connection'), eventTypeStandard: text('eventTypeStandard'), officialStatus: text('officialStatus'), copStatus: text('copStatus'), parentEventId: text('parentEventId'), umbrellaTitle: text('umbrellaTitle'), umbrellaUrl: text('umbrellaUrl'), speakers: list('speakers'), registrationUrl: text('registrationUrl'), informationUrl: text('informationUrl'), sourceUrl: text('sourceUrl') };
+    return { title: text('title'), summary: text('summary'), description: text('description'), venueName: text('venueName'), venueAddress: text('venueAddress'), city: text('city'), country: text('country'), organizers: list('organizers'), organizerUrl: text('organizerUrl'), languages: list('languages'), topics: list('topics'), cop31Connection: text('cop31Connection'), eventTypeStandard: text('eventTypeStandard'), officialStatus: text('officialStatus'), copStatus: text('copStatus'), parentEventId: text('parentEventId'), umbrellaTitle: text('umbrellaTitle'), umbrellaUrl: text('umbrellaUrl'), speakers: list('speakers'), registrationUrl: text('registrationUrl'), informationUrl: text('informationUrl'), sourceUrl: text('sourceUrl'), access: text('access') };
   } catch { return fallback; }
 }
 
@@ -151,6 +151,19 @@ export function Cop31Editor() {
   };
   useEffect(() => { void load(); }, []);
 
+  async function toggleFeatured(event: Cop31Event) {
+    const featured = !event.featured;
+    const response = await fetch('/api/cop31-editor/events/' + event.id, {
+      method: 'PATCH', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ featured, ...(featured ? { featuredPlacement: 'TOP' } : {}) }),
+    });
+    const data = await response.json();
+    if (!response.ok) { notice(data.message ?? 'Öne çıkarma kaydedilemedi.', true); return; }
+    setEvents(current => current.map(item => item.id === event.id ? data as Cop31Event : item));
+    if (form.id === event.id) setForm(current => ({ ...current, featured, ...(featured ? { featuredPlacement: 'TOP' as const } : {}) }));
+    notice(featured ? 'Etkinlik tek tıkla listenin en üstüne alındı.' : 'Öne çıkarma kaldırıldı.');
+  }
+
   function setDateTime(prefix: 'starts' | 'ends' | 'verified', value: DateTimeParts) {
     setForm(current => prefix === 'starts' ? { ...current, startsDate: value.date, startsHour: value.hour, startsMinute: value.minute } : prefix === 'ends' ? { ...current, endsDate: value.date, endsHour: value.hour, endsMinute: value.minute } : { ...current, verifiedDate: value.date, verifiedHour: value.hour, verifiedMinute: value.minute });
   }
@@ -229,7 +242,7 @@ export function Cop31Editor() {
   return <main className="cop31-editor-page">
     <header className="cop31-editor-header"><Link className="cop31-brand" href="/"><span>e</span><b>eventise</b></Link><div><Link href={directoryHref('tr')} target="_blank">Genel sayfayı aç ↗</Link><button type="button" onClick={logout}>Çıkış</button></div></header>
     <div className="cop31-editor-layout">
-      <aside className="cop31-editor-list"><div><p className="cop31-eyebrow">COP31 ETKİNLİKLERİ</p><h1>İçerik alanı</h1><button className="cop31-editor-new" type="button" onClick={() => { setForm(blank()); setScreen('tr'); setEntryMode('form'); notice(''); }}>+ Yeni etkinlik</button></div><div className="cop31-editor-filters"><label>Etkinlik ara<input type="search" value={eventSearch} onChange={event => setEventSearch(event.target.value)} placeholder="Başlık, kurum, şehir veya kısa ad" /></label><label>Yayın durumu<select value={eventStatusFilter} onChange={event => setEventStatusFilter(event.target.value as 'ALL' | Cop31Status)}><option value="ALL">Tüm durumlar</option><option value="PUBLISHED">Yayında</option><option value="DRAFT">Taslak</option><option value="POSTPONED">Ertelendi</option><option value="CANCELLED">İptal edildi</option><option value="ARCHIVED">Arşiv</option></select></label><label>Öne çıkan<select value={eventFeaturedFilter} onChange={event => setEventFeaturedFilter(event.target.value as 'ALL' | 'FEATURED' | 'REGULAR')}><option value="ALL">Tümü</option><option value="FEATURED">Öne çıkanlar</option><option value="REGULAR">Normal liste</option></select></label></div><p className="cop31-editor-count">{filteredEvents.length} / {events.length} kayıt</p><div className="cop31-editor-event-list">{filteredEvents.map(event => <button type="button" className={`${form.id === event.id ? 'active ' : ''}${event.featured ? 'featured' : ''}`} onClick={() => { setForm(fromEvent(event)); setScreen('tr'); setEntryMode('form'); notice(''); }} key={event.id}><span>{new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short', timeZone: event.timezone }).format(new Date(event.startsAt))}</span><strong>{event.contentTr.title || event.contentEn.title}</strong><small>{statusLabel(event.status)}{event.featured ? ' · Öne çıkan' : ''}</small></button>)}{filteredEvents.length === 0 && <p className="cop31-editor-no-results">Aramayla eşleşen etkinlik yok.</p>}</div></aside>
+      <aside className="cop31-editor-list"><div><p className="cop31-eyebrow">COP31 ETKİNLİKLERİ</p><h1>İçerik alanı</h1><button className="cop31-editor-new" type="button" onClick={() => { setForm(blank()); setScreen('tr'); setEntryMode('form'); notice(''); }}>+ Yeni etkinlik</button></div><div className="cop31-editor-filters"><label>Etkinlik ara<input type="search" value={eventSearch} onChange={event => setEventSearch(event.target.value)} placeholder="Başlık, kurum, şehir veya kısa ad" /></label><label>Yayın durumu<select value={eventStatusFilter} onChange={event => setEventStatusFilter(event.target.value as 'ALL' | Cop31Status)}><option value="ALL">Tüm durumlar</option><option value="PUBLISHED">Yayında</option><option value="DRAFT">Taslak</option><option value="POSTPONED">Ertelendi</option><option value="CANCELLED">İptal edildi</option><option value="ARCHIVED">Arşiv</option></select></label><label>Öne çıkan<select value={eventFeaturedFilter} onChange={event => setEventFeaturedFilter(event.target.value as 'ALL' | 'FEATURED' | 'REGULAR')}><option value="ALL">Tümü</option><option value="FEATURED">Öne çıkanlar</option><option value="REGULAR">Normal liste</option></select></label></div><p className="cop31-editor-count">{filteredEvents.length} / {events.length} kayıt</p><div className="cop31-editor-event-list">{filteredEvents.map(event => <div className={`cop31-editor-event-row${event.featured ? ' featured' : ''}`} key={event.id}><button type="button" className={`cop31-editor-event-select${form.id === event.id ? ' active' : ''}`} onClick={() => { setForm(fromEvent(event)); setScreen('tr'); setEntryMode('form'); notice(''); }}><span>{new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short', timeZone: event.timezone }).format(new Date(event.startsAt))}</span><strong>{event.contentTr.title || event.contentEn.title}</strong><small>{statusLabel(event.status)}{event.featured ? ' · Öne çıkan' : ''}</small></button><button type="button" className="cop31-editor-feature-button" title={event.featured ? 'Öne çıkarmayı kaldır' : 'Tek tıkla listenin en üstüne çıkar'} aria-label={event.featured ? 'Öne çıkarmayı kaldır' : 'Öne çıkar'} onClick={() => void toggleFeatured(event)}>{event.featured ? '★' : '☆'}</button></div>)}{filteredEvents.length === 0 && <p className="cop31-editor-no-results">Aramayla eşleşen etkinlik yok.</p>}</div></aside>
       <section className="cop31-editor-form-wrap">
         <header><div><p className="cop31-eyebrow">{form.id ? 'ETKİNLİĞİ DÜZENLE' : 'YENİ ETKİNLİK'}</p><h2>{form.id ? 'Etkinlik bilgileri' : 'Yeni COP31 etkinliği'}</h2></div>{message && <p className={'cop31-editor-message' + (messageIsError ? ' error' : '')} role="status">{message}</p>}</header>
         <form className="cop31-editor-form" onSubmit={save}>
@@ -246,4 +259,3 @@ export function Cop31Editor() {
     </div>
   </main>;
 }
-

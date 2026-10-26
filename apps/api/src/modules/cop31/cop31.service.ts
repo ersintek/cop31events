@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cop31EventStatus, Cop31FeaturedPlacement, Prisma } from '@prisma/client';
 import { timingSafeEqual } from 'node:crypto';
 import { PrismaService } from '../../shared/persistence/prisma.service';
-import { Cop31EventContentDto, Cop31EventDto, CreateCop31EventDto } from './dto/cop31-event.dto';
+import { Cop31EventContentDto, Cop31EventDto, CreateCop31EventDto, UpdateCop31EventDto } from './dto/cop31-event.dto';
 
 @Injectable()
 export class Cop31Service {
@@ -42,10 +42,24 @@ export class Cop31Service {
     return this.prisma.cop31Event.create({ data: { ...this.toData(dto), slug } });
   }
 
-  async update(id: string, dto: Cop31EventDto) {
+  async update(id: string, patch: UpdateCop31EventDto) {
+    const existing = await this.prisma.cop31Event.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Etkinlik bulunamadı.');
+    const dto: Cop31EventDto = {
+      contentTr: { ...(existing.contentTr as unknown as Cop31EventContentDto), ...patch.contentTr },
+      contentEn: { ...(existing.contentEn as unknown as Cop31EventContentDto), ...patch.contentEn },
+      startsAt: patch.startsAt ?? existing.startsAt.toISOString(),
+      endsAt: patch.endsAt ?? existing.endsAt?.toISOString(),
+      timeKnown: patch.timeKnown ?? existing.timeKnown,
+      timezone: patch.timezone ?? existing.timezone,
+      format: patch.format ?? existing.format,
+      status: patch.status ?? existing.status,
+      featured: patch.featured ?? existing.featured,
+      featuredPlacement: patch.featuredPlacement ?? existing.featuredPlacement,
+      verifiedAt: patch.verifiedAt ?? existing.verifiedAt?.toISOString(),
+    };
     await this.assertDates(dto);
     this.assertPublicationVerification(dto);
-    if (!await this.prisma.cop31Event.findUnique({ where: { id }, select: { id: true } })) throw new NotFoundException('Etkinlik bulunamadı.');
     return this.prisma.cop31Event.update({ where: { id }, data: this.toData(dto) });
   }
 
@@ -90,6 +104,7 @@ export class Cop31Service {
     const value = (entry?: string | null) => entry?.trim() || '';
     const words = (values?: string[]) => values?.map(entry => entry.trim()).filter(Boolean) ?? [];
     const clean = {
+      ...content,
       title: value(content.title), summary: value(content.summary), description: text(content.description),
       venueName: text(content.venueName), venueAddress: text(content.venueAddress), city: text(content.city), country: text(content.country),
       organizers: words(content.organizers), organizerUrl: text(content.organizerUrl), languages: words(content.languages), topics: words(content.topics),
@@ -107,4 +122,3 @@ export class Cop31Service {
     return clean;
   }
 }
-
