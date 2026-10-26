@@ -1121,6 +1121,8 @@
 .cop31-editor-list .cop31-editor-event-row .cop31-editor-event-select.active { border-color: #d8d3ff; background: #eeecff; }
 .cop31-editor-list .cop31-editor-event-row .cop31-editor-feature-button { display: grid; place-items: center; align-self: center; flex: 0 0 36px; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #6656bf; font-size: 1.25rem; cursor: pointer; }
 .cop31-editor-list .cop31-editor-event-row .cop31-editor-feature-button:hover { background: #eeecff; }
+.cop31-editor-list .cop31-editor-event-row .cop31-editor-feature-button.active { background: #eeecff; color: #5144b1; }
+.cop31-editor-list .cop31-editor-event-row .cop31-editor-feature-button.sidebar { font-size: 1.05rem; }
 .cop31-editor-no-results { margin: 12px 2px; color: #73747a; font-size: 12px; line-height: 1.45; }
 
 @media (max-width: 760px) {
