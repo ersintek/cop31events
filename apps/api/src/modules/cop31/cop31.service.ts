@@ -45,9 +45,10 @@ export class Cop31Service {
   async update(id: string, patch: UpdateCop31EventDto) {
     const existing = await this.prisma.cop31Event.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Etkinlik bulunamadı.');
+    const definedContent = (content?: Cop31EventContentDto) => Object.fromEntries(Object.entries(content ?? {}).filter(([, value]) => value !== undefined)) as Cop31EventContentDto;
     const dto: Cop31EventDto = {
-      contentTr: { ...(existing.contentTr as unknown as Cop31EventContentDto), ...patch.contentTr },
-      contentEn: { ...(existing.contentEn as unknown as Cop31EventContentDto), ...patch.contentEn },
+      contentTr: { ...(existing.contentTr as unknown as Cop31EventContentDto), ...definedContent(patch.contentTr) },
+      contentEn: { ...(existing.contentEn as unknown as Cop31EventContentDto), ...definedContent(patch.contentEn) },
       startsAt: patch.startsAt ?? existing.startsAt.toISOString(),
       endsAt: patch.endsAt ?? existing.endsAt?.toISOString(),
       timeKnown: patch.timeKnown ?? existing.timeKnown,
@@ -122,3 +123,4 @@ export class Cop31Service {
     return clean;
   }
 }
+
