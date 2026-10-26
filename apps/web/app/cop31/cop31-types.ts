@@ -20,6 +20,7 @@ export type Cop31LocalizedContent = {
   officialStatus?: string | null;
   copStatus?: string | null;
   parentEventId?: string | null;
+  programmeSlug?: string | null;
   umbrellaTitle?: string | null;
   umbrellaUrl?: string | null;
   speakers?: string[];
@@ -97,4 +98,3 @@ export type Cop31Copy = {
   access: string;
   noRegistration: string;
 };
-

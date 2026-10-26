@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { copy, dayNumber, eventContent, eventHref, eventPeriod, formatEventDate, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
-import { Cop31Account } from './cop31-account';
+import { Cop31SiteHeader } from './cop31-site-header';
+import { Cop31ConnectBand } from './cop31-connect-band';
 import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
+import { cop31OfficialProgrammeSlugs, cop31Programmes, cop31RelatedProgrammeSlugs, getProgrammeForEvent, programmeHref } from './cop31-programmes';
+import { eventTypeLabel, standardEventType } from './cop31-event-types';
 
 type Phase = 'all' | 'before' | 'during' | 'after' | 'past';
 const PAGE_SIZE = 24;
@@ -38,6 +41,7 @@ export function EventCard({ event, locale, showUmbrella = true, featured = false
   const words = copy[locale];
   const status = eventStatus(event, locale);
   const content = eventContent(event, locale);
+  const programme = getProgrammeForEvent(event);
   const place = event.format === 'ONLINE' ? words.online : [content.city, content.country].filter(Boolean).join(', ') || content.venueName || words.inPerson;
   return <article className={`cop31-event-card${event.status === 'CANCELLED' ? ' is-cancelled' : ''}${featured ? ' is-featured' : ''}`}>
     <time className="cop31-date-badge" dateTime={event.startsAt}><strong>{dayNumber(event, locale)}</strong><span>{monthName(event, locale)}</span></time>
@@ -47,9 +51,9 @@ export function EventCard({ event, locale, showUmbrella = true, featured = false
       <h2><Link href={eventHref(event, locale)}>{localized(event, 'title', locale)}</Link></h2>
       <p>{localized(event, 'summary', locale)}</p>
       {(content.eventTypeStandard || content.officialStatus || content.copStatus || (showUmbrella && content.umbrellaTitle) || content.speakers?.length) && <div className="cop31-card-hierarchy">
-        {content.eventTypeStandard && <span className="cop31-program-type">{content.eventTypeStandard}</span>}
+        {content.eventTypeStandard && <span className="cop31-program-type">{eventTypeLabel(content.eventTypeStandard, locale)}</span>}
         {(content.officialStatus || content.copStatus) && <span className="cop31-status-line">{[content.officialStatus, content.copStatus].filter(Boolean).join(' · ')}</span>}
-        {showUmbrella && content.umbrellaTitle && <span className="cop31-umbrella-line">{locale === 'tr' ? 'Şemsiye' : 'Programme'}: {content.umbrellaUrl ? <a href={content.umbrellaUrl} target="_blank" rel="noopener noreferrer">{content.umbrellaTitle} ↗</a> : <b>{content.umbrellaTitle}</b>}</span>}
+        {showUmbrella && content.umbrellaTitle && <span className="cop31-umbrella-line">{locale === 'tr' ? 'Şemsiye program' : 'Umbrella programme'}: {programme ? <Link href={programmeHref(programme, locale)}>{content.umbrellaTitle} →</Link> : content.umbrellaUrl ? <a href={content.umbrellaUrl} target="_blank" rel="noopener noreferrer">{content.umbrellaTitle} ↗</a> : <b>{content.umbrellaTitle}</b>}</span>}
         {content.speakers && content.speakers.length > 0 && <span className="cop31-speaker-line"><b>{locale === 'tr' ? 'Konuşmacılar' : 'Speakers'}:</b> {content.speakers.join(' · ')}</span>}
       </div>}
       <div className="cop31-card-tags"><span className="cop31-connection-tag">{content.cop31Connection}</span>{content.topics.map(topic => <span key={topic}>{topic}</span>)}</div>
@@ -76,7 +80,14 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pagination, setPagination] = useState({ key: '', count: PAGE_SIZE });
   const umbrellas = useMemo(() => [...new Set(events.map(event => eventContent(event, locale).umbrellaTitle?.trim()).filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b, locale === 'tr' ? 'tr' : 'en')), [events, locale]);
-  const eventTypes = useMemo(() => [...new Set(events.map(event => eventContent(event, locale).eventTypeStandard?.trim()).filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b, locale === 'tr' ? 'tr' : 'en')), [events, locale]);
+  const officialProgrammes = cop31OfficialProgrammeSlugs.map(slug => cop31Programmes.find(programme => programme.slug === slug)).filter((programme): programme is (typeof cop31Programmes)[number] => Boolean(programme));
+  const relatedProgrammes = cop31RelatedProgrammeSlugs.map(slug => cop31Programmes.find(programme => programme.slug === slug)).filter((programme): programme is (typeof cop31Programmes)[number] => Boolean(programme));
+  const curatedSlugs = new Set<string>([...cop31OfficialProgrammeSlugs, ...cop31RelatedProgrammeSlugs]);
+  const otherProgrammes = cop31Programmes.filter(programme => !curatedSlugs.has(programme.slug)).sort((a, b) => a.title[locale].localeCompare(b.title[locale], locale === 'tr' ? 'tr' : 'en'));
+  const knownTitles = new Set(cop31Programmes.map(programme => programme.title[locale]));
+  const otherTitles = [...otherProgrammes.map(programme => programme.title[locale]), ...umbrellas.filter(title => !knownTitles.has(title))];
+  const selectedProgramme = cop31Programmes.find(programme => programme.title[locale] === umbrella);
+  const eventTypes = useMemo(() => [...new Set(events.map(event => standardEventType(eventContent(event, locale).eventTypeStandard)))].filter(Boolean).sort((a, b) => eventTypeLabel(a, locale).localeCompare(eventTypeLabel(b, locale), locale === 'tr' ? 'tr' : 'en')), [events, locale]);
   const copAreas = useMemo(() => [...new Set(events.map(event => eventContent(event, locale).copStatus?.trim()).filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b, locale === 'tr' ? 'tr' : 'en')), [events, locale]);
   const formats = useMemo(() => [...new Set(events.map(event => event.format))], [events]);
   const shown = useMemo(() => {
@@ -86,7 +97,7 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
       if (event.status === 'CANCELLED') return false;
       if (phase === 'past' ? !isPast(event) : isPast(event) || (phase !== 'all' && eventPeriod(event) !== phase)) return false;
       if (umbrella && content.umbrellaTitle !== umbrella) return false;
-      if (eventType && content.eventTypeStandard !== eventType) return false;
+      if (eventType && standardEventType(content.eventTypeStandard) !== eventType) return false;
       if (copArea && content.copStatus !== copArea) return false;
       if (date) {
         const eventDate = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: event.timezone }).formatToParts(new Date(event.startsAt)).reduce<Record<string, string>>((result, part) => ({ ...result, [part.type]: part.value }), {});
@@ -117,18 +128,19 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   const eventGroups = useMemo(() => {
     const groups: Array<{ key: string; title?: string; url?: string | null; events: Cop31Event[] }> = [];
     for (let pageStart = 0; pageStart < visibleRegular.length; pageStart += PAGE_SIZE) {
-      const grouped = new Map<string, { title: string; url?: string | null; events: Cop31Event[] }>();
+      let current: (typeof groups)[number] | null = null;
       for (const event of visibleRegular.slice(pageStart, pageStart + PAGE_SIZE)) {
         const content = eventContent(event, locale);
-        if (!content.umbrellaTitle) { groups.push({ key: event.id, events: [event] }); continue; }
-        const key = content.umbrellaTitle;
-        let group = grouped.get(key);
-        if (!group) {
-          group = { title: content.umbrellaTitle, url: content.umbrellaUrl, events: [] };
-          grouped.set(key, group);
-          groups.push({ key: `${pageStart}-${key}`, ...group });
+        if (!content.umbrellaTitle) {
+          current = null;
+          groups.push({ key: event.id, events: [event] });
+          continue;
         }
-        group.events.push(event);
+        if (!current || current.title !== content.umbrellaTitle) {
+          current = { key: `${pageStart}-${event.id}`, title: content.umbrellaTitle, url: content.umbrellaUrl, events: [] };
+          groups.push(current);
+        }
+        current.events.push(event);
       }
     }
     return groups;
@@ -139,10 +151,7 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   const updateDate = (value: string) => { const formatted = dateInput(value); setDateEntry(formatted); setDate(dateFilterValue(formatted)); };
 
   return <main className="cop31-page cop31-radar-page">
-    <header className="cop31-header">
-      <Link className="cop31-brand cop31-radar-brand" href="https://cop31radar.com" aria-label="COP31Radar.com"><b>COP31Radar</b><span aria-hidden="true">✳</span></Link>
-      <div className="cop31-header-actions"><span className="cop31-radar-domain">events.cop31radar.com</span><Cop31Account locale={locale}/></div>
-    </header>
+    <Cop31SiteHeader locale={locale}/>
 
     <section className="cop31-hero cop31-radar-hero" aria-labelledby="cop31-title">
       <div className="cop31-hero-inner">
@@ -166,8 +175,11 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
       <button type="button" className="cop31-mobile-filter-toggle" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="cop31-filters"><span>{words.filters}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}<i aria-hidden="true">⌄</i></button>
       <aside className={`cop31-filters${filtersOpen ? ' is-open' : ''}`} id="cop31-filters">
         <div className="cop31-filter-title"><h2>{words.filters}</h2>{activeFilterCount > 0 && <button type="button" onClick={clearFilters}>{words.clearFilters}</button>}</div>
-        {umbrellas.length > 0 && <label>{locale === 'tr' ? 'Şemsiye programı' : 'Umbrella programme'}<select value={umbrella} onChange={event => setUmbrella(event.target.value)}><option value="">{locale === 'tr' ? 'Tüm programlar' : 'All programmes'}</option>{umbrellas.map(value => <option key={value} value={value}>{value}</option>)}</select></label>}
-        {eventTypes.length > 0 && <label>{locale === 'tr' ? 'Etkinlik türü' : 'Event type'}<select value={eventType} onChange={event => setEventType(event.target.value)}><option value="">{locale === 'tr' ? 'Tüm etkinlik türleri' : 'All event types'}</option>{eventTypes.map(value => <option key={value} value={value}>{value}</option>)}</select></label>}
+        <div className="cop31-official-programme-buttons">{officialProgrammes.map(programme => <button key={programme.slug} type="button" className={umbrella === programme.title[locale] ? 'active' : ''} aria-pressed={umbrella === programme.title[locale]} onClick={() => setUmbrella(current => current === programme.title[locale] ? '' : programme.title[locale])}>{programme.title[locale]}</button>)}</div>
+        <label className="cop31-programme-select">{locale === 'tr' ? 'COP31 Pavyonları ve Bağlantılı Programlar' : 'COP31 Pavilions and Related Programmes'}<select value={relatedProgrammes.some(programme => programme.title[locale] === umbrella) ? umbrella : ''} onChange={event => setUmbrella(event.target.value)}><option value="">{locale === 'tr' ? 'Program seçin' : 'Select a programme'}</option>{relatedProgrammes.map(programme => <option key={programme.slug} value={programme.title[locale]}>{programme.title[locale]}</option>)}</select></label>
+        <label className="cop31-programme-select">{locale === 'tr' ? 'Diğer İklim Etkinlikleri' : 'Other Climate Events'}<select value={otherTitles.includes(umbrella) ? umbrella : ''} onChange={event => setUmbrella(event.target.value)}><option value="">{locale === 'tr' ? 'Program seçin' : 'Select a programme'}</option>{otherTitles.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+        {selectedProgramme && <Link className="cop31-programme-filter-link" href={programmeHref(selectedProgramme, locale)}>{locale === 'tr' ? 'Program sayfasını aç' : 'Open programme page'} →</Link>}
+        {eventTypes.length > 0 && <label>{locale === 'tr' ? 'Etkinlik türü' : 'Event type'}<select value={eventType} onChange={event => setEventType(event.target.value)}><option value="">{locale === 'tr' ? 'Tüm etkinlik türleri' : 'All event types'}</option>{eventTypes.map(value => <option key={value} value={value}>{eventTypeLabel(value, locale)}</option>)}</select></label>}
         {copAreas.length > 0 && <label>{locale === 'tr' ? 'COP alanı / konumu' : 'COP area / location'}<select value={copArea} onChange={event => setCopArea(event.target.value)}><option value="">{locale === 'tr' ? 'Tüm COP alanları' : 'All COP areas'}</option>{copAreas.map(value => <option key={value} value={value}>{value}</option>)}</select></label>}
         <label>{locale === 'tr' ? 'Tarih (GG-AA-YY)' : 'Date (DD-MM-YY)'}<input value={dateEntry} inputMode="numeric" maxLength={8} placeholder={locale === 'tr' ? 'GG-AA-YY' : 'DD-MM-YY'} onChange={event => updateDate(event.target.value)} />{date && <small className="cop31-filter-date-label">{readableDate(date, locale)}</small>}</label>
         {formats.length > 0 && <label>{words.format}<select value={format} onChange={event => setFormat(event.target.value)}><option value="">{words.allFormats}</option>{formats.map(value => <option key={value} value={value}>{formatLabel(value, locale)}</option>)}</select></label>}
@@ -177,12 +189,13 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
       <div className="cop31-results">
         <div className="cop31-results-heading"><p>{shown.length} {words.results}{shown.length > displayedCount ? ` · ${displayedCount} ${locale === 'tr' ? 'gösteriliyor' : 'shown'}` : ''}</p></div>
         {shown.length > 0 ? <div className="cop31-event-list">{featured.map(event => <EventCard event={event} locale={locale} featured key={`featured-${event.id}`}/>)}{eventGroups.map(group => group.title ? <section className="cop31-umbrella-group" key={group.key}>
-          <header><div><p>{locale === 'tr' ? 'ŞEMSİYE PROGRAM' : 'UMBRELLA PROGRAMME'} · {umbrellaTotals.get(group.title) ?? group.events.length} {locale === 'tr' ? 'alt etkinlik' : 'sessions'}</p><h2>{group.url ? <a href={group.url} target="_blank" rel="noopener noreferrer">{group.title} ↗</a> : group.title}</h2></div></header>
+          <header><div><p>{locale === 'tr' ? 'ŞEMSİYE PROGRAM' : 'UMBRELLA PROGRAMME'} · {umbrellaTotals.get(group.title) ?? group.events.length} {locale === 'tr' ? 'alt etkinlik' : 'sessions'}</p><h2>{getProgrammeForEvent(group.events[0]) ? <Link href={programmeHref(getProgrammeForEvent(group.events[0])!, locale)}>{group.title} →</Link> : group.url ? <a href={group.url} target="_blank" rel="noopener noreferrer">{group.title} ↗</a> : group.title}</h2></div></header>
           <div className="cop31-umbrella-sessions">{group.events.map(event => <EventCard event={event} locale={locale} showUmbrella={false} key={event.id}/>)}</div>
         </section> : <EventCard event={group.events[0]} locale={locale} key={group.key}/>)}</div> : <div className="cop31-empty"><span aria-hidden="true">⌁</span><h2>{words.emptyTitle}</h2><p>{words.emptyBody}</p><button type="button" onClick={showAll}>{locale === 'tr' ? 'Tüm etkinlikleri göster' : 'Show all events'} →</button></div>}
         {shown.length > displayedCount && <div className="cop31-load-more"><button type="button" onClick={() => setPagination({ key: filterKey, count: visibleCount + PAGE_SIZE })}>{locale === 'tr' ? 'Daha fazla göster' : 'Show more'} <span aria-hidden="true">↓</span></button></div>}
       </div>
     </section>
+    <Cop31ConnectBand locale={locale}/>
     <footer className="cop31-footer"><span>Eventise işbirliği ile COP31Radar.com için geliştirilmiştir.</span></footer>
   </main>;
 }
@@ -190,4 +203,3 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
 export function Cop31Directory({ events, locale }: { events: Cop31Event[]; locale: Cop31Locale }) {
   return <Cop31SavedEventsProvider><Cop31DirectoryContent events={events} locale={locale}/></Cop31SavedEventsProvider>;
 }
-

@@ -18,6 +18,7 @@ export class Cop31EventContentDto {
   @IsOptional() @IsArray() @ArrayMaxSize(3) @IsString({ each: true }) @MaxLength(80, { each: true }) topics?: string[];
   @IsOptional() @ValidateIf((_object, value) => typeof value !== 'string' || Boolean(value.trim())) @IsString() @MaxLength(100) cop31Connection?: string;
   @IsOptional() @IsString() @MaxLength(100) eventTypeStandard?: string;
+  @IsOptional() @IsString() @MaxLength(100) @Matches(/^[a-z0-9-]+$/) programmeSlug?: string;
   @IsOptional() @IsString() @MaxLength(100) officialStatus?: string;
   @IsOptional() @IsString() @MaxLength(100) copStatus?: string;
   @IsOptional() @IsString() @MaxLength(180) parentEventId?: string;

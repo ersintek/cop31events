@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import type { Cop31Copy, Cop31Event, Cop31Format, Cop31Locale, Cop31LocalizedContent } from './cop31-types';
 import { trackerExampleEvents } from './cop31-tracker-examples';
+import { getProgrammeForEvent } from './cop31-programmes';
 
 const API = process.env.API_INTERNAL_URL;
 // Sample records are useful for a deliberate local design preview, but must
@@ -63,7 +64,12 @@ export const formatLabel = (format: Cop31Format, locale: Cop31Locale) => {
   return format === 'ONLINE' ? words.online : format === 'IN_PERSON' ? words.inPerson : words.hybrid;
 };
 
-export const eventContent = (event: Cop31Event, locale: Cop31Locale): Cop31LocalizedContent => locale === 'tr' ? event.contentTr : event.contentEn;
+export const eventContent = (event: Cop31Event, locale: Cop31Locale): Cop31LocalizedContent => {
+  const content = locale === 'tr' ? event.contentTr : event.contentEn;
+  if (content.umbrellaTitle) return content;
+  const programme = getProgrammeForEvent(event);
+  return programme ? { ...content, umbrellaTitle: programme.title[locale], umbrellaUrl: programme.sourceUrl } : content;
+};
 export const localized = (event: Cop31Event, key: 'title' | 'summary' | 'description', locale: Cop31Locale) => eventContent(event, locale)[key] ?? '';
 
 export const eventHref = (event: Pick<Cop31Event, 'slug'>, locale: Cop31Locale) => `${locale === 'en' ? '/en' : ''}/cop31/${event.slug}`;

@@ -5,6 +5,8 @@ import type { Cop31Event, Cop31Locale } from './cop31-types';
 import { Cop31SiteHeader } from './cop31-site-header';
 import { Cop31ConnectBand } from './cop31-connect-band';
 import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
+import { getProgrammeForEvent, programmeHref } from './cop31-programmes';
+import { eventTypeLabel } from './cop31-event-types';
 
 function DetailStatus({ event, locale }: { event: Cop31Event; locale: Cop31Locale }) {
   const words = copy[locale];
@@ -37,6 +39,7 @@ function sourceHost(url: string) {
 export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop31Locale }) {
   const words = copy[locale];
   const content = eventContent(event, locale);
+  const programme = getProgrammeForEvent(event);
   const title = localized(event, 'title', locale);
   const summary = localized(event, 'summary', locale).trim();
   const description = localized(event, 'description', locale).trim();
@@ -62,7 +65,7 @@ export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop3
           <p className="cop31-detail-kicker">COP31 / {periodLabel}</p>
           <h1>{title}</h1>
           {summary && <p className="cop31-detail-summary">{summary}</p>}
-          {(content.eventTypeStandard || content.copStatus) && <div className="cop31-detail-hero-tags">{content.eventTypeStandard && <span>{content.eventTypeStandard}</span>}{content.copStatus && <span>{content.copStatus}</span>}</div>}
+          {(content.eventTypeStandard || content.copStatus) && <div className="cop31-detail-hero-tags">{content.eventTypeStandard && <span>{eventTypeLabel(content.eventTypeStandard, locale)}</span>}{content.copStatus && <span>{content.copStatus}</span>}</div>}
         </div>
         <div className="cop31-detail-date-art" aria-hidden="true"><span>COP31RADAR / EVENT</span><strong>{dayNumber(event, locale)}</strong><b>{monthName(event, locale)}</b><small>{new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { year: 'numeric', timeZone: event.timezone }).format(new Date(event.startsAt))}</small><i/></div>
       </header>
@@ -75,12 +78,12 @@ export function Cop31Detail({ event, locale }: { event: Cop31Event; locale: Cop3
 
       <div className="cop31-detail-layout">
         <div className="cop31-detail-content">
-          {content.umbrellaTitle && <section className="cop31-detail-umbrella" aria-labelledby="cop31-umbrella-title"><p className="cop31-detail-section-label">{locale === 'tr' ? 'Bağlı olduğu şemsiye programı' : 'Umbrella programme'}</p><h2 id="cop31-umbrella-title">{content.umbrellaUrl ? <a href={content.umbrellaUrl} target="_blank" rel="noopener noreferrer">{content.umbrellaTitle} <span aria-hidden="true">↗</span></a> : content.umbrellaTitle}</h2></section>}
+          {content.umbrellaTitle && <section className="cop31-detail-umbrella" aria-labelledby="cop31-umbrella-title"><p className="cop31-detail-section-label">{locale === 'tr' ? 'Bağlı olduğu şemsiye programı' : 'Umbrella programme'}</p><h2 id="cop31-umbrella-title">{programme ? <Link href={programmeHref(programme, locale)}>{content.umbrellaTitle} <span aria-hidden="true">→</span></Link> : content.umbrellaUrl ? <a href={content.umbrellaUrl} target="_blank" rel="noopener noreferrer">{content.umbrellaTitle} <span aria-hidden="true">↗</span></a> : content.umbrellaTitle}</h2></section>}
 
           {longDescription && <section className="cop31-detail-section" aria-labelledby="cop31-about-title"><h2 id="cop31-about-title">{words.about}</h2>{longDescription.split(/\n\s*\n/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>}
 
           {hasEventDetails && <section className="cop31-detail-section cop31-detail-information" aria-labelledby="cop31-information-title"><h2 id="cop31-information-title">{locale === 'tr' ? 'Etkinlik bilgileri' : 'Event details'}</h2><dl className="cop31-detail-data-list">
-            {content.eventTypeStandard && <div><dt>{locale === 'tr' ? 'Etkinlik türü' : 'Event type'}</dt><dd>{content.eventTypeStandard}</dd></div>}
+            {content.eventTypeStandard && <div><dt>{locale === 'tr' ? 'Etkinlik türü' : 'Event type'}</dt><dd>{eventTypeLabel(content.eventTypeStandard, locale)}</dd></div>}
             {content.officialStatus && <div><dt>{locale === 'tr' ? 'Resmî durum' : 'Official status'}</dt><dd>{content.officialStatus}</dd></div>}
             {content.copStatus && <div><dt>{locale === 'tr' ? 'COP alanı / konumu' : 'COP area / location'}</dt><dd>{content.copStatus}</dd></div>}
             {content.cop31Connection && <div><dt>{words.cop31Connection}</dt><dd>{content.cop31Connection}</dd></div>}
