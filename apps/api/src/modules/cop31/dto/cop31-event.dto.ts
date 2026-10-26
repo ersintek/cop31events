@@ -1,6 +1,6 @@
 import { Cop31EventFormat, Cop31EventStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEnum, IsOptional, IsString, IsUrl, Length, Matches, MaxLength, ValidateIf, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsDefined, IsEnum, IsIn, IsOptional, IsString, IsUrl, Length, Matches, MaxLength, ValidateIf, ValidateNested } from 'class-validator';
 
 export class Cop31EventContentDto {
   // Drafts can deliberately contain an unfinished locale. The service applies
@@ -40,9 +40,11 @@ export class Cop31EventDto {
   @IsEnum(Cop31EventFormat) format!: Cop31EventFormat;
   @IsEnum(Cop31EventStatus) status!: Cop31EventStatus;
   @IsOptional() @IsBoolean() featured?: boolean;
+  @IsOptional() @IsIn(['TOP', 'SIDEBAR', 'BOTH']) featuredPlacement?: 'TOP' | 'SIDEBAR' | 'BOTH';
   @IsOptional() @IsDateString() verifiedAt?: string;
 }
 
 export class CreateCop31EventDto extends Cop31EventDto {
   @IsString() @Length(2, 100) @Matches(/^[a-z0-9-]+$/) slug!: string;
 }
+

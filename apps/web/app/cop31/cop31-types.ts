@@ -1,6 +1,7 @@
 export type Cop31Locale = 'tr' | 'en';
 export type Cop31Format = 'ONLINE' | 'IN_PERSON' | 'HYBRID';
 export type Cop31Status = 'DRAFT' | 'PUBLISHED' | 'POSTPONED' | 'CANCELLED' | 'ARCHIVED';
+export type Cop31FeaturedPlacement = 'TOP' | 'SIDEBAR' | 'BOTH';
 
 export type Cop31LocalizedContent = {
   title: string;
@@ -40,6 +41,7 @@ export type Cop31Event = {
   format: Cop31Format;
   status: Cop31Status;
   featured: boolean;
+  featuredPlacement?: Cop31FeaturedPlacement;
   verifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -95,3 +97,4 @@ export type Cop31Copy = {
   access: string;
   noRegistration: string;
 };
+

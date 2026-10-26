@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cop31EventStatus, Prisma } from '@prisma/client';
+import { Cop31EventStatus, Cop31FeaturedPlacement, Prisma } from '@prisma/client';
 import { timingSafeEqual } from 'node:crypto';
 import { PrismaService } from '../../shared/persistence/prisma.service';
 import { Cop31EventContentDto, Cop31EventDto, CreateCop31EventDto } from './dto/cop31-event.dto';
@@ -80,6 +80,7 @@ export class Cop31Service {
       organizers: tr.organizers, organizerUrl: tr.organizerUrl ?? null, languages: tr.languages, topics: tr.topics,
       cop31Connection: tr.cop31Connection, registrationUrl: tr.registrationUrl ?? null, informationUrl: tr.informationUrl ?? null,
       sourceUrl: tr.sourceUrl, status: dto.status, featured: dto.featured ?? false,
+      featuredPlacement: dto.featuredPlacement ?? Cop31FeaturedPlacement.BOTH,
       verifiedAt: dto.verifiedAt ? new Date(dto.verifiedAt) : null,
     };
   }
@@ -106,3 +107,4 @@ export class Cop31Service {
     return clean;
   }
 }
+

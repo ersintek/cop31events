@@ -21,6 +21,12 @@ enum Cop31EventFormat {
   HYBRID
 }
 
+enum Cop31FeaturedPlacement {
+  TOP
+  SIDEBAR
+  BOTH
+}
+
 model Cop31Event {
   id              String            @id @default(cuid())
   slug            String            @unique
@@ -51,6 +57,7 @@ model Cop31Event {
   sourceUrl       String
   status          Cop31EventStatus  @default(DRAFT)
   featured        Boolean           @default(false)
+  featuredPlacement Cop31FeaturedPlacement @default(BOTH)
   verifiedAt      DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -70,3 +77,4 @@ model Cop31SavedEvent {
   @@unique([userId, eventId])
   @@index([userId, savedAt])
 }
+
