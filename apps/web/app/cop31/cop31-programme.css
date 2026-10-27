@@ -24,19 +24,24 @@
 }
 .cop31-programme-filter-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-.cop31-official-programme-buttons { display: grid; gap: 8px; margin: 0 0 22px; }
-.cop31-official-programme-buttons button {
-  width: 100%; padding: 11px 12px; border: 1px solid var(--cop31-line); border-radius: 8px;
-  background: var(--cop31-surface); color: var(--cop31-ink); text-align: left;
-  font: 700 .76rem/1.35 var(--font-sans, Arial, sans-serif); cursor: pointer;
+.cop31-radar-page .cop31-filters { display: block; }
+.cop31-filter-toggle {
+  display: flex; width: 100%; align-items: center; gap: 10px; padding: 16px;
+  border: 1px solid var(--cop31-blue); border-radius: 8px; background: #fff;
+  color: var(--cop31-blue); text-align: left; text-transform: uppercase;
+  font: 800 1rem/1.2 var(--font-sans, Arial, sans-serif); letter-spacing: .04em; cursor: pointer;
 }
-.cop31-official-programme-buttons button:hover,
-.cop31-official-programme-buttons button.active { border-color: var(--cop31-purple-dark); color: var(--cop31-purple-dark); }
-.cop31-official-programme-buttons button.active { background: #f1edfa; }
-.cop31-official-programme-buttons button:focus-visible { outline: 2px solid var(--cop31-purple-dark); outline-offset: 2px; }
+.cop31-filter-toggle:hover { background: #f1f3ff; }
+.cop31-filter-toggle:focus-visible { outline: 3px solid var(--cop31-blue); outline-offset: 2px; }
+.cop31-filter-toggle b { display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 50%; background: var(--cop31-blue); color: #fff; font-size: .7rem; }
+.cop31-filter-toggle i { margin-left: auto; font-size: 1.35rem; font-style: normal; line-height: 1; }
+.cop31-filter-controls { padding-top: 18px; }
+.cop31-filter-controls[hidden] { display: none; }
+.cop31-filter-controls .cop31-filter-title { justify-content: flex-end; margin-bottom: 14px; }
 @media (max-width: 760px) {
-  .cop31-official-programme-buttons, .cop31-programme-select { grid-column: 1 / -1; }
-  .cop31-official-programme-buttons { margin-bottom: 6px; }
+  .cop31-radar-page .cop31-filters { margin-bottom: 16px; }
+  .cop31-programme-select { grid-column: 1 / -1; }
+  .cop31-filter-controls .cop31-programme-select { margin-bottom: 17px; }
 }
 
 .cop31-programme-hero {
