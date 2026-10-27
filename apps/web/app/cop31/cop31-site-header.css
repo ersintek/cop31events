@@ -4,3 +4,20 @@
 @media(max-width:650px){.cop31-radar-page .cop31-unified-header{gap:12px;padding:12px 16px}.cop31-radar-page .cop31-header-brand-block .cop31-brand,.cop31-radar-page .cop31-header-brand-block .cop31-brand b{font-size:24px}.cop31-header-credit{font-size:9px}.cop31-unified-nav{gap:8px 12px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:7px}.cop31-unified-nav a{font-size:11px}.cop31-header-tools{gap:7px}.cop31-account-email{display:none}.cop31-language-choice{font-size:10px}}
 
 .cop31-connect-band{display:flex;justify-content:space-between;align-items:center;gap:28px;width:min(1450px,calc(100% - 8vw));margin:30px auto 0;padding:23px 26px;border-radius:15px;background:#17201e;color:#fff;font-family:'DM Sans',Arial,sans-serif}.cop31-connect-band strong{font-size:20px}.cop31-connect-band p{max-width:550px;margin:5px 0 0;color:#cbd3cd;font-size:13px;line-height:1.5}.cop31-connect-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.cop31-connect-email{display:flex;align-items:center;gap:5px}.cop31-connect-email input{width:185px;min-width:0;padding:10px;border:0;border-radius:6px;background:#f7f3ea;color:#17201e}.cop31-connect-email span{padding:10px;border-radius:6px;background:#435149;font-size:12px;white-space:nowrap}.cop31-connect-actions>a{padding:10px 13px;border:1px solid #dcfa57;border-radius:99px;color:#dcfa57;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}@media(max-width:850px){.cop31-connect-band{flex-direction:column;align-items:flex-start}}@media(max-width:560px){.cop31-connect-band{width:calc(100% - 32px);padding:20px}.cop31-connect-actions{width:100%}.cop31-connect-email{width:100%}.cop31-connect-email input{flex:1}}
+
+/* Newsletter form, matching the main COP31Radar site. */
+.cop31-connect-band { align-items: flex-start; scroll-margin-top: 24px; padding: 30px; gap: 36px; }
+.cop31-newsletter-intro { flex: 1; }
+.cop31-newsletter-intro > span { color: #dcfa57; font-size: .68rem; font-weight: 800; letter-spacing: .1em; }
+.cop31-newsletter-intro h2 { max-width: 490px; margin: 10px 0 8px; font-size: clamp(1.4rem, 2vw, 2rem); line-height: 1.15; }
+.cop31-newsletter-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; flex: 1; width: 100%; }
+.cop31-newsletter-form > label:not(.cop31-newsletter-consent):not(.cop31-newsletter-honeypot) { display: grid; gap: 5px; color: #e7ede8; font-size: .72rem; font-weight: 700; }
+.cop31-newsletter-form input:not([type=checkbox]) { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px; border: 1px solid #d9ddd8; border-radius: 6px; background: #fff; color: #17201e; font: inherit; }
+.cop31-newsletter-honeypot { position: absolute; left: -10000px; }
+.cop31-newsletter-consent { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 8px; color: #e7ede8; font-size: .72rem; line-height: 1.45; }
+.cop31-newsletter-consent input { flex: none; margin: 2px 0 0; }
+.cop31-newsletter-consent a { color: #dcfa57; }
+.cop31-newsletter-form button { justify-self: start; padding: 10px 18px; border: 0; border-radius: 6px; background: #dcfa57; color: #17201e; font: 700 .8rem 'DM Sans', Arial, sans-serif; cursor: pointer; }
+.cop31-newsletter-form button:disabled { opacity: .65; cursor: wait; }
+.cop31-newsletter-status { align-self: center; font-size: .75rem; }.cop31-newsletter-status.is-error { color: #ffb8ae; }
+@media(max-width: 560px) { .cop31-newsletter-form { grid-template-columns: 1fr; }.cop31-newsletter-consent { grid-column: 1; } }

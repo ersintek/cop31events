@@ -2,32 +2,17 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { copy, dayNumber, eventContent, eventHref, eventPeriod, formatEventDate, formatLabel, isPast, localized, monthName } from './cop31-data';
+import { copy, dayNumber, eventContent, eventHref, eventLocalDate, eventPeriod, formatEventDate, formatLabel, isPast, localized, monthName } from './cop31-data';
 import type { Cop31Event, Cop31Locale } from './cop31-types';
 import { Cop31SiteHeader } from './cop31-site-header';
 import { Cop31ConnectBand } from './cop31-connect-band';
 import { Cop31SaveButton, Cop31SavedEventsProvider } from './cop31-saved-events';
 import { cop31OfficialProgrammeSlugs, cop31Programmes, cop31RelatedProgrammeSlugs, getProgrammeForEvent, programmeHref } from './cop31-programmes';
 import { eventTypeLabel } from './cop31-event-types';
+import { Cop31DateFilter } from './cop31-date-filter';
 
 type Phase = 'all' | 'before' | 'during' | 'after' | 'past';
 const PAGE_SIZE = 24;
-
-const dateInput = (value: string) => {
-  const digits = value.replace(/\D/g, '').slice(0, 6);
-  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 6)].filter(Boolean).join('-');
-};
-
-const dateFilterValue = (value: string) => {
-  const match = /^(\d{2})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return '';
-  const day = Number(match[1]), month = Number(match[2]), year = 2000 + Number(match[3]);
-  const check = new Date(Date.UTC(year, month - 1, day));
-  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return '';
-  return `${year}-${match[2]}-${match[1]}`;
-};
-
-const readableDate = (value: string, locale: Cop31Locale) => new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-GB', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
 
 function eventStatus(event: Cop31Event, locale: Cop31Locale) {
   const words = copy[locale];
@@ -73,8 +58,7 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   const [query, setQuery] = useState('');
   const [umbrella, setUmbrella] = useState('');
   const [copArea, setCopArea] = useState('');
-  const [date, setDate] = useState('');
-  const [dateEntry, setDateEntry] = useState('');
+  const [dates, setDates] = useState<string[]>([]);
   const [format, setFormat] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pagination, setPagination] = useState({ key: '', count: PAGE_SIZE });
@@ -96,17 +80,14 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
       if (phase === 'past' ? !isPast(event) : isPast(event) || (phase !== 'all' && eventPeriod(event) !== phase)) return false;
       if (umbrella && content.umbrellaTitle !== umbrella) return false;
       if (copArea && content.copStatus !== copArea) return false;
-      if (date) {
-        const eventDate = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: event.timezone }).formatToParts(new Date(event.startsAt)).reduce<Record<string, string>>((result, part) => ({ ...result, [part.type]: part.value }), {});
-        if (`${eventDate.year}-${eventDate.month}-${eventDate.day}` !== date) return false;
-      }
+      if (dates.length && !dates.includes(eventLocalDate(event))) return false;
       if (format && event.format !== format) return false;
       if (!needle) return true;
       const searchable = [localized(event, 'title', locale), localized(event, 'summary', locale), content.organizers.join(' '), content.city, content.country, content.topics.join(' '), content.umbrellaTitle, content.speakers?.join(' ')].filter(Boolean).join(' ').toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US');
       return searchable.includes(needle);
     }).sort((a, b) => phase === 'past' ? new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime() : new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-  }, [copArea, date, events, format, locale, phase, query, umbrella]);
-  const filterKey = JSON.stringify([phase, query, umbrella, copArea, date, format]);
+  }, [copArea, dates, events, format, locale, phase, query, umbrella]);
+  const filterKey = JSON.stringify([phase, query, umbrella, copArea, dates, format]);
   const visibleCount = pagination.key === filterKey ? pagination.count : PAGE_SIZE;
   const featured = shown.filter(event => event.featured && event.featuredPlacement !== 'SIDEBAR' && !isPast(event));
   const featuredSidebar = shown.filter(event => event.featured && event.featuredPlacement !== 'TOP' && !isPast(event));
@@ -142,10 +123,9 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
     }
     return groups;
   }, [locale, visibleRegular]);
-  const clearFilters = () => { setUmbrella(''); setCopArea(''); setDate(''); setDateEntry(''); setFormat(''); };
+  const clearFilters = () => { setUmbrella(''); setCopArea(''); setDates([]); setFormat(''); };
   const showAll = () => { clearFilters(); setQuery(''); setPhase('all'); setFiltersOpen(false); };
-  const activeFilterCount = [umbrella, copArea, date, format].filter(Boolean).length;
-  const updateDate = (value: string) => { const formatted = dateInput(value); setDateEntry(formatted); setDate(dateFilterValue(formatted)); };
+  const activeFilterCount = [umbrella, copArea, dates.length > 0, format].filter(Boolean).length;
 
   return <main className="cop31-page cop31-radar-page">
     <Cop31SiteHeader locale={locale}/>
@@ -170,18 +150,21 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
     </nav>
     <section className="cop31-directory" aria-label="COP31 event directory">
       <aside className="cop31-filters">
-        <button type="button" className="cop31-filter-toggle" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="cop31-filter-controls"><span>{words.filters}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}<i aria-hidden="true">{filtersOpen ? '−' : '+'}</i></button>
+        <button type="button" className="cop31-filter-toggle" onClick={() => setFiltersOpen(open => !open)} aria-expanded={filtersOpen} aria-controls="cop31-filter-controls"><span>{locale === 'tr' ? 'FİLTRELER' : 'FILTERS'}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}<i aria-hidden="true">{filtersOpen ? '−' : '+'}</i></button>
         <div id="cop31-filter-controls" className="cop31-filter-controls" hidden={!filtersOpen}>
         {activeFilterCount > 0 && <div className="cop31-filter-title"><button type="button" onClick={clearFilters}>{words.clearFilters}</button></div>}
         <label className="cop31-programme-select">{locale === 'tr' ? 'UNFCCC Resmî Etkinlikler' : 'UNFCCC Official Events'}<select value={officialProgrammes.some(programme => programme.title[locale] === umbrella) ? umbrella : ''} onChange={event => setUmbrella(event.target.value)}><option value="">{locale === 'tr' ? 'Program seçin' : 'Select a programme'}</option>{officialProgrammes.map(programme => <option key={programme.slug} value={programme.title[locale]}>{programme.title[locale]}</option>)}</select></label>
+        {selectedProgramme && officialProgrammes.some(programme => programme.slug === selectedProgramme.slug) && <Link className="cop31-programme-filter-link" href={programmeHref(selectedProgramme, locale)}>{locale === 'tr' ? 'Program sayfasını aç' : 'Open programme page'} →</Link>}
         <label className="cop31-programme-select">{locale === 'tr' ? 'COP31 Pavyonları ve Bağlantılı Programlar' : 'COP31 Pavilions and Related Programmes'}<select value={relatedProgrammes.some(programme => programme.title[locale] === umbrella) ? umbrella : ''} onChange={event => setUmbrella(event.target.value)}><option value="">{locale === 'tr' ? 'Program seçin' : 'Select a programme'}</option>{relatedProgrammes.map(programme => <option key={programme.slug} value={programme.title[locale]}>{programme.title[locale]}</option>)}</select></label>
+        {selectedProgramme && relatedProgrammes.some(programme => programme.slug === selectedProgramme.slug) && <Link className="cop31-programme-filter-link" href={programmeHref(selectedProgramme, locale)}>{locale === 'tr' ? 'Program sayfasını aç' : 'Open programme page'} →</Link>}
         <label className="cop31-programme-select">{locale === 'tr' ? 'Diğer İklim Etkinlikleri' : 'Other Climate Events'}<select value={otherTitles.includes(umbrella) ? umbrella : ''} onChange={event => setUmbrella(event.target.value)}><option value="">{locale === 'tr' ? 'Program seçin' : 'Select a programme'}</option>{otherTitles.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-        {selectedProgramme && <Link className="cop31-programme-filter-link" href={programmeHref(selectedProgramme, locale)}>{locale === 'tr' ? 'Program sayfasını aç' : 'Open programme page'} →</Link>}
+        {selectedProgramme && otherProgrammes.some(programme => programme.slug === selectedProgramme.slug) && <Link className="cop31-programme-filter-link" href={programmeHref(selectedProgramme, locale)}>{locale === 'tr' ? 'Program sayfasını aç' : 'Open programme page'} →</Link>}
         {copAreas.length > 0 && <label>{locale === 'tr' ? 'COP alanı / konumu' : 'COP area / location'}<select value={copArea} onChange={event => setCopArea(event.target.value)}><option value="">{locale === 'tr' ? 'Tüm COP alanları' : 'All COP areas'}</option>{copAreas.map(value => <option key={value} value={value}>{value}</option>)}</select></label>}
-        <label>{locale === 'tr' ? 'Tarih (GG-AA-YY)' : 'Date (DD-MM-YY)'}<input value={dateEntry} inputMode="numeric" maxLength={8} placeholder={locale === 'tr' ? 'GG-AA-YY' : 'DD-MM-YY'} onChange={event => updateDate(event.target.value)} />{date && <small className="cop31-filter-date-label">{readableDate(date, locale)}</small>}</label>
+        <Cop31DateFilter dates={dates} onChange={setDates} locale={locale}/>
         {formats.length > 0 && <label>{words.format}<select value={format} onChange={event => setFormat(event.target.value)}><option value="">{words.allFormats}</option>{formats.map(value => <option key={value} value={value}>{formatLabel(value, locale)}</option>)}</select></label>}
         <div className="cop31-filter-note"><span aria-hidden="true">i</span><p>{locale === 'tr' ? 'Etkinlik bilgileri açık kaynaklardan ve doğrudan paylaşılan duyurulardan derlenir.' : 'Event information is curated from public sources and directly shared announcements.'}</p></div>
         </div>
+        <a className="cop31-sidebar-newsletter" href="#newsletter" aria-label={locale === 'tr' ? 'E-bültene abone olun' : 'Subscribe to the newsletter'}><strong>{locale === 'tr' ? 'E-bültene abone olun' : 'Subscribe to the newsletter'}</strong><span className="cop31-sidebar-newsletter-field"><span>{locale === 'tr' ? 'E-posta adresiniz' : 'Your email address'}</span><span aria-hidden="true">↘</span></span></a>
         {featuredSidebar.length > 0 && <section className="cop31-featured-sidebar" aria-label={locale === 'tr' ? 'Öne çıkan etkinlikler' : 'Featured events'}><h2>{locale === 'tr' ? 'Öne çıkan etkinlikler' : 'Featured events'}</h2>{featuredSidebar.map(event => { const content = eventContent(event, locale); return <article className="cop31-featured-mini-card" key={event.id}><Link className="cop31-featured-mini-title" href={eventHref(event, locale)}>{localized(event, 'title', locale)}</Link><time dateTime={event.startsAt}>{formatEventDate(event, locale, false)}</time>{content.organizers[0] && <span className="cop31-featured-mini-organizer">{content.organizers[0]}</span>}<Link className="cop31-featured-mini-link" href={eventHref(event, locale)}>{locale === 'tr' ? 'Etkinliği incele' : 'View event'} <span aria-hidden="true">→</span></Link></article>; })}</section>}
       </aside>
       <div className="cop31-results">

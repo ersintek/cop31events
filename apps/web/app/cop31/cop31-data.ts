@@ -75,6 +75,12 @@ export const localized = (event: Cop31Event, key: 'title' | 'summary' | 'descrip
 export const eventHref = (event: Pick<Cop31Event, 'slug'>, locale: Cop31Locale) => `${locale === 'en' ? '/en' : ''}/cop31/${event.slug}`;
 export const directoryHref = (locale: Cop31Locale) => locale === 'en' ? '/en/cop31' : '/';
 
+export const eventLocalDate = (event: Pick<Cop31Event, 'startsAt' | 'timezone'>) => {
+  const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: event.timezone }).formatToParts(new Date(event.startsAt));
+  const part = (type: string) => parts.find(item => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+
 export type Cop31Period = 'before' | 'during' | 'after';
 export const eventPeriod = (event: Pick<Cop31Event, 'startsAt' | 'endsAt' | 'timezone'>): Cop31Period => {
   const localDate = (value: string) => {
