@@ -14,6 +14,10 @@ export type Cop31Programme = {
 // Programme pages are curated separately from events. A programme is never
 // counted as an event; its page lists the sessions linked to it.
 export const cop31Programmes: Cop31Programme[] = [
+  { slug: 'ieta-business-hub', title: { tr: 'COP31 IETA İş Dünyası Merkezi', en: 'IETA BusinessHub at COP31' }, organiser: { tr: 'International Emissions Trading Association', en: 'International Emissions Trading Association' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://www.ieta.org/events/cop31-ieta-business-pavilion', sourcePrefix: 'https://www.ieta.org/events/cop31-ieta-business-pavilion#ieta-business-hub' },
+  { slug: 'standards-pavilion', title: { tr: 'COP31 Standartlar Pavyonu', en: 'Standards Pavilion at COP31' }, organiser: { tr: 'International Organization for Standardization', en: 'International Organization for Standardization' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://www.standardspavilion.org/home.html', sourcePrefix: 'https://www.standardspavilion.org/home.html#standards-pavilion' },
+  { slug: 'moana-blue-pacific-pavilion', title: { tr: 'COP31 Moana Mavi Pasifik Pavyonu', en: 'Moana Blue Pacific Pavilion at COP31' }, organiser: { tr: 'Secretariat of the Pacific Regional Environment Programme', en: 'Secretariat of the Pacific Regional Environment Programme' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://prod-ppin.sprep.org/news/moana-blue-pacific-deadline-for-side-event-submissions-extended', sourcePrefix: 'https://prod-ppin.sprep.org/news/moana-blue-pacific-deadline-for-side-event-submissions-extended#moana-blue-pacific-pavilion' },
+  { slug: 'wgeo-pavilion', title: { tr: 'COP31 Dünya Yeşil Ekonomi Örgütü Pavyonu', en: 'World Green Economy Organization Pavilion at COP31' }, organiser: { tr: 'World Green Economy Organization', en: 'World Green Economy Organization' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://worldgreeneconomy.org/wgeo-at-cop31/', sourcePrefix: 'https://worldgreeneconomy.org/wgeo-at-cop31/#wgeo-pavilion' },
   { slug: 'cop-business-pavilion', title: { tr: 'COP31 İş Dünyası Pavyonu', en: 'Business Pavilion at COP31' }, organiser: { tr: 'We Mean Business Coalition', en: 'We Mean Business Coalition' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://www.wemeanbusinesscoalition.org/what-we-do/cop-and-other-events/we-mean-business-coalition-at-cop31-turkiye/', sourcePrefix: 'https://www.wemeanbusinesscoalition.org/what-we-do/cop-and-other-events/we-mean-business-coalition-at-cop31-turkiye/#cop-business-pavilion' },
   { slug: 'francophonie-pavilion', title: { tr: 'COP31 Frankofoni Pavyonu', en: 'Francophonie Pavilion at COP31' }, organiser: { tr: 'Organisation internationale de la Francophonie ve IFDD', en: 'Organisation internationale de la Francophonie and IFDD' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://institutdelafinancedurable.fr/evenement/cop31/', sourcePrefix: 'https://institutdelafinancedurable.fr/evenement/cop31/#francophonie-pavilion' },
   { slug: 'just-transition-pavilion', title: { tr: 'COP31 Adil Dönüşüm Pavyonu', en: 'Just Transition Pavilion at COP31' }, organiser: { tr: 'Uluslararası Çalışma Örgütü ve ortakları', en: 'International Labour Organization and partners' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://institutdelafinancedurable.fr/evenement/cop31/', sourcePrefix: 'https://institutdelafinancedurable.fr/evenement/cop31/#just-transition-pavilion' },
@@ -123,6 +127,7 @@ export const cop31RelatedProgrammeSlugs = [
   'cop-business-pavilion', 'francophonie-pavilion', 'just-transition-pavilion',
   'higher-education-climate-pavilion', 'kazakhstan-pavilion', 'azerbaijan-pavilion',
   'asean-pavilion', 'somalia-pavilion', 'undp-pavilion', 'belgium-pavilion',
+  'ieta-business-hub', 'standards-pavilion', 'moana-blue-pacific-pavilion', 'wgeo-pavilion',
 ] as const;
 
 export const getCop31Programme = (slug: string) => cop31Programmes.find(programme => programme.slug === slug);
@@ -143,3 +148,4 @@ export const getProgrammeForEvent = (event: Cop31Event): Cop31Programme | undefi
 };
 
 export const programmeHref = (programme: Cop31Programme, locale: Cop31Locale) => `${locale === 'en' ? '/en' : ''}/cop31/programmes/${programme.slug}`;
+
