@@ -13,6 +13,7 @@ import { Cop31DateFilter } from './cop31-date-filter';
 
 type Phase = 'all' | 'before' | 'during' | 'after' | 'past';
 const PAGE_SIZE = 24;
+const normalizeSearch = (value: string) => value.toLowerCase().replace(/ı/g, 'i').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 function eventStatus(event: Cop31Event, locale: Cop31Locale) {
   const words = copy[locale];
@@ -73,7 +74,7 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
   const copAreas = useMemo(() => [...new Set(events.map(event => eventContent(event, locale).copStatus?.trim()).filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b, locale === 'tr' ? 'tr' : 'en')), [events, locale]);
   const formats = useMemo(() => [...new Set(events.map(event => event.format))], [events]);
   const shown = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US');
+    const needle = normalizeSearch(query.trim());
     return events.filter(event => {
       const content = eventContent(event, locale);
       if (event.status === 'CANCELLED') return false;
@@ -83,7 +84,7 @@ function Cop31DirectoryContent({ events, locale }: { events: Cop31Event[]; local
       if (dates.length && !dates.includes(eventLocalDate(event))) return false;
       if (format && event.format !== format) return false;
       if (!needle) return true;
-      const searchable = [localized(event, 'title', locale), localized(event, 'summary', locale), content.organizers.join(' '), content.city, content.country, content.topics.join(' '), content.umbrellaTitle, content.speakers?.join(' ')].filter(Boolean).join(' ').toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US');
+      const searchable = normalizeSearch([event.contentTr, event.contentEn].flatMap(item => [item.title, item.summary, item.description, item.organizers?.join(' '), item.city, item.country, item.topics?.join(' '), item.umbrellaTitle, item.speakers?.join(' ')]).filter(Boolean).join(' '));
       return searchable.includes(needle);
     }).sort((a, b) => phase === 'past' ? new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime() : new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
   }, [copArea, dates, events, format, locale, phase, query, umbrella]);
