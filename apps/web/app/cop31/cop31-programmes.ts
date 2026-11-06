@@ -1,4 +1,5 @@
 import type { Cop31Event, Cop31Locale } from './cop31-types';
+import { newCop31Programmes, newCop31RelatedProgrammeSlugs } from './cop31-new-programmes';
 
 export type Cop31Programme = {
   slug: string;
@@ -14,6 +15,7 @@ export type Cop31Programme = {
 // Programme pages are curated separately from events. A programme is never
 // counted as an event; its page lists the sessions linked to it.
 export const cop31Programmes: Cop31Programme[] = [
+  ...newCop31Programmes,
   { slug: 'ieta-business-hub', title: { tr: 'COP31 IETA İş Dünyası Merkezi', en: 'IETA BusinessHub at COP31' }, organiser: { tr: 'International Emissions Trading Association', en: 'International Emissions Trading Association' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://www.ieta.org/events/cop31-ieta-business-pavilion', sourcePrefix: 'https://www.ieta.org/events/cop31-ieta-business-pavilion#ieta-business-hub' },
   { slug: 'standards-pavilion', title: { tr: 'COP31 Standartlar Pavyonu', en: 'Standards Pavilion at COP31' }, organiser: { tr: 'International Organization for Standardization', en: 'International Organization for Standardization' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://www.standardspavilion.org/home.html', sourcePrefix: 'https://www.standardspavilion.org/home.html#standards-pavilion' },
   { slug: 'moana-blue-pacific-pavilion', title: { tr: 'COP31 Moana Mavi Pasifik Pavyonu', en: 'Moana Blue Pacific Pavilion at COP31' }, organiser: { tr: 'Secretariat of the Pacific Regional Environment Programme', en: 'Secretariat of the Pacific Regional Environment Programme' }, area: { tr: 'Mavi Bölge', en: 'Blue Zone' }, sourceUrl: 'https://prod-ppin.sprep.org/news/moana-blue-pacific-deadline-for-side-event-submissions-extended', sourcePrefix: 'https://prod-ppin.sprep.org/news/moana-blue-pacific-deadline-for-side-event-submissions-extended#moana-blue-pacific-pavilion' },
@@ -112,6 +114,7 @@ export const cop31Programmes: Cop31Programme[] = [
 // The sidebar order follows the curated COP31 programme list.
 export const cop31OfficialProgrammeSlugs = ['unfccc-main-conference-schedule', 'unfccc-official-side-events'] as const;
 export const cop31RelatedProgrammeSlugs = [
+  ...newCop31RelatedProgrammeSlugs,
   'turkiye-pavilion', 'brazil-pavilion', 'precop31-stakeholder-programme', 'australian-pavilion',
   'global-climate-action', 'indonesia-pavilion', 'south-africa-pavilion', 'bbva-and-garanti-bbva-pavilion',
   'finland-pavilion', 'regional-climate-foundations-pavilion', 'health-pavilion', 'german-climate-pavilion',
